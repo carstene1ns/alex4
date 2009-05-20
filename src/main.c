@@ -840,6 +840,7 @@ int init_game(const char *map_file) {
 			i = DIGI_AUTODETECT;
 			log2file("  DIGI_AUTODETECT selected (%d)", i);
 			break;
+#ifdef ALLEGRO_WINDOWS
 		case 2:
 			i = DIGI_DIRECTX(0);
 			log2file("  DIGI_DIRECTX(0) selected (%d)", i);
@@ -848,6 +849,20 @@ int init_game(const char *map_file) {
 			i = DIGI_DIRECTAMX(0);
 			log2file("  DIGI_DIRECTAMX(0) selected (%d)", i);
 			break;
+#elif defined ALLEGRO_UNIX
+#ifdef DIGI_OSS
+		case 2:
+			i = DIGI_OSS;
+			log2file("  DIGI_OSS selected (%d)", i);
+			break;
+#endif
+#ifdef DIGI_ALSA
+		case 3:
+			i = DIGI_ALSA;
+			log2file("  DIGI_ALSA selected (%d)", i);
+			break;
+#endif
+#endif
 		default:
 			i = -770405;	// dummy number
 			got_sound = 0;
