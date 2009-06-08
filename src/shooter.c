@@ -373,7 +373,7 @@ void s_draw_status_bar(BITMAP *bmp, int x, int y) {
 		draw_sprite(bmp, s_data[(i < s_var.power_gauge ? ST_STAR_ON : ST_STAR_OFF)].dat, x + 36 + i * 8, y + 3); 
 	
 	// draw score
-	sprintf(score_str, "%d", s_var.show_score);
+	sprintf(score_str, "%lu", s_var.show_score);
 	padding = 11 - strlen(score_str);
 	for(i = 0; i < padding; i ++)
 		padding_str[i] = '0';
