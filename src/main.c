@@ -1304,7 +1304,7 @@ void show_cutscene(int level) {
 			// poll music machine
 			if (got_sound) al_poll_duh(dp);
 
-			if (mode == 1 && (keypressed() || is_fire(&ctrl) || is_jump(&ctrl) ) || my_counter > 200) {
+			if (((mode == 1) && (keypressed() || is_fire(&ctrl) || is_jump(&ctrl))) || my_counter > 200) {
 				mode = 2;
 			}
 			
