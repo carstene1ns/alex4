@@ -67,7 +67,7 @@ void insert_token(Ttoken *list, Ttoken *t) {
 
 // tokenizes the string str
 Ttoken *tokenize(char *str) {
-    Ttoken *tok_list, *tok_tmp;
+    Ttoken *tok_list, *tok_tmp = NULL;
     char word[256];
     int a, b, c;
     int i = 0;
@@ -100,7 +100,7 @@ Ttoken *tokenize(char *str) {
 		insert_token(tok_list, tok_tmp);
     }
 
-	tok_tmp->word[strlen(tok_tmp->word) - 1] = '\0';
+	if( tok_tmp ) tok_tmp->word[strlen(tok_tmp->word) - 1] = '\0';
     tok_tmp = (Ttoken *)tok_list->next;
     destroy_token(tok_list);
     
