@@ -89,7 +89,7 @@ void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int
 
 	// draw text
 	for(i = 0; i < lines; i ++) {
-		textout(bmp, d[THE_FONT].dat, rows[i], x1 + 4, y1 + 5 + i * 9, 1);
+		textout_ex(bmp, d[THE_FONT].dat, rows[i], x1 + 4, y1 + 5 + i * 9, 1, -1);
 	}
 }
 
@@ -103,7 +103,7 @@ void esc_rest(int millis) {
 		poll_music();
 		count ++;
 		while(!cycle_count);
-		yield_timeslice();
+		rest(0);
 	}
     if (key[KEY_ESC]) script_done = -1;
 }
@@ -521,7 +521,7 @@ void cmd_run(Ttoken *t) {
 		}
 
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 
 		// blit buffer to swap buffer
 		blit(buffer, swap_buffer, 0, 0, 0, 0, 160, 120);

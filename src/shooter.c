@@ -341,7 +341,7 @@ void s_draw_object(BITMAP *bmp, Tspace_object *o) {
 		if (!o->hit || o->type == SO_PLAYER_BULLET)
 			draw_sprite(bmp, s_data[o->image].dat, (int)o->x, (int)o->y);
 		else
-			draw_character(bmp, s_data[o->image].dat, (int)o->x, (int)o->y, 4);
+			draw_character_ex(bmp, s_data[o->image].dat, (int)o->x, (int)o->y, 4, -1);
 	}
 	else {
 		int c = (o->energy + 8) >> 3;
@@ -379,8 +379,8 @@ void s_draw_status_bar(BITMAP *bmp, int x, int y) {
 		padding_str[i] = '0';
 	padding_str[i] = '\0';
 	strcat(padding_str, score_str);
-	textprintf_right(bmp, s_data[SPACE_FONT].dat, x + 160, y + 2, 3, "%s", padding_str);
-	if (s_var.score) textprintf_right(bmp, s_data[SPACE_FONT].dat, x + 160, y + 2, 4, "%s", score_str);
+	textprintf_right_ex(bmp, s_data[SPACE_FONT].dat, x + 160, y + 2, 3, -1, "%s", padding_str);
+	if (s_var.score) textprintf_right_ex(bmp, s_data[SPACE_FONT].dat, x + 160, y + 2, 4, -1, "%s", score_str);
 }
 
 
@@ -1268,7 +1268,7 @@ void s_run_shooter() {
 		
 		
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 		
 		// draw 
 		frame_count ++;

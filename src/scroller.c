@@ -65,22 +65,22 @@ void draw_scroller(Tscroller *sc, BITMAP *bmp, int x, int y) {
 	if (sc->horizontal) {
 		if (sc->offset < -sc->length) return;
 		if (sc->offset > sc->width) return;
-		set_clip(bmp, x, y, x + sc->width, y + sc->height);
-		textout(bmp, sc->fnt, sc->text, x + sc->offset + 1, y + 1, 1);
-		textout(bmp, sc->fnt, sc->text, x + sc->offset, y, 3);
-		set_clip(bmp, 0, 0, bmp->w-1, bmp->h-1);
+		set_clip_rect(bmp, x, y, x + sc->width, y + sc->height);
+		textout_ex(bmp, sc->fnt, sc->text, x + sc->offset + 1, y + 1, 1, -1);
+		textout_ex(bmp, sc->fnt, sc->text, x + sc->offset, y, 3, -1);
+		set_clip_rect(bmp, 0, 0, bmp->w-1, bmp->h-1);
 	}
 	else {
 		int i;
 		if (sc->offset < -sc->rows * sc->font_height) return;
 		if (sc->offset > sc->height) return;
-		set_clip(bmp, x, y, x + sc->width, y + sc->height);
+		set_clip_rect(bmp, x, y, x + sc->width, y + sc->height);
 		for(i=0;i<sc->rows;i++) {
 			if (i * sc->font_height + sc->offset <= sc->height) 
 				if ((i+1) * sc->font_height + sc->offset >= 0)
-					textout_centre(bmp, sc->fnt, sc->lines[i], x+(sc->width>>1) , i * sc->font_height + y + sc->offset, -1);
+					textout_centre_ex(bmp, sc->fnt, sc->lines[i], x+(sc->width>>1) , i * sc->font_height + y + sc->offset, -1, -1);
 		}
-		set_clip(bmp, 0, 0, bmp->w-1, bmp->h-1);
+		set_clip_rect(bmp, 0, 0, bmp->w-1, bmp->h-1);
 	}
 }
 

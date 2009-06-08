@@ -147,9 +147,9 @@ void save_hisc_table(Thisc *table, PACKFILE *fp) {
 
 // draws a single hisc post
 void draw_hisc_post(Thisc *table, BITMAP *bmp, FONT *fnt, int x, int y, int color, int show_level) {
-	textprintf(bmp, fnt, x, y, color, "%s", table->name);
-	if (show_level) textprintf_right(bmp, fnt, x+80, y, color, "%2d", table->level);
-	textprintf_right(bmp, fnt, x+140, y, color, "%d", table->score);
+	textprintf_ex(bmp, fnt, x, y, color, -1, "%s", table->name);
+	if (show_level) textprintf_right_ex(bmp, fnt, x+80, y, color, -1, "%2d", table->level);
+	textprintf_right_ex(bmp, fnt, x+140, y, color, -1, "%d", table->score);
 }
 
 // draws the entire table

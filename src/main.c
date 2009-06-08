@@ -323,7 +323,7 @@ void fade_rest(int msec, AL_DUH_PLAYER *duh_player) {
 		cycle_count = 0;
 		if (got_sound && duh_player != NULL) al_poll_duh(duh_player);
 		i ++;
-		while(!cycle_count)	yield_timeslice();
+		while(!cycle_count)	rest(0);
 	}
 }
 
@@ -497,15 +497,15 @@ void draw_status_bar(BITMAP *bmp, int y) {
 
 	rectfill(bmp, 0, y, 159, y+9, 1);
 	draw_sprite_h_flip(bmp, data[HERO_NORM].dat, 0, y+1); 
-	textprintf(bmp, data[THE_FONT].dat, 9, y+1, 4, " :%d", player.lives);
+	textprintf_ex(bmp, data[THE_FONT].dat, 9, y+1, 4, -1, " :%d", player.lives);
 
 	for(i = 0; i < player.health; i ++)
 		draw_sprite(bmp, data[HEART2].dat, 40 + 10 * i, y-3);
 
 	draw_sprite(bmp, data[EGG].dat, 80, y-5); 
-	textprintf(bmp, data[THE_FONT].dat, 85, y+1, 4, " :%d", player.ammo);
+	textprintf_ex(bmp, data[THE_FONT].dat, 85, y+1, 4, -1, " :%d", player.ammo);
 
-	textprintf_right(bmp, data[THE_FONT].dat, 158, y+1, 4, "%d", player.score);
+	textprintf_right_ex(bmp, data[THE_FONT].dat, 158, y+1, 4, -1, "%d", player.score);
 }
 
 
@@ -623,10 +623,8 @@ int init_game(const char *map_file) {
 
 	// various allegro things
 	log2file(" initializing allegro");
-	text_mode(-1);
 	garble_string(init_string, 53);
 	set_config_file("alex4.ini");
-	set_window_close_button(FALSE);
 	
 	// install timers
 	log2file(" installing timers");
@@ -692,7 +690,7 @@ int init_game(const char *map_file) {
 
 	// show initial loading screen
 	clear(swap_screen);
-	textout_centre(swap_screen, font, "loading...", 320, 200, 1);
+	textout_centre_ex(swap_screen, font, "loading...", 320, 200, 1, -1);
 	blit_to_screen(swap_screen);
 
 	// set switch modes and callbacks
@@ -765,8 +763,8 @@ int init_game(const char *map_file) {
 	clear_to_color(swap_screen, 3);
 
 	bmp = data[FLD_LOGO].dat;
-	draw_character(swap_screen, bmp, 80 - bmp->w / 2 + 0, 50 + 1, 1);
-	draw_character(swap_screen, bmp, 80 - bmp->w / 2, 50, 4);
+	draw_character_ex(swap_screen, bmp, 80 - bmp->w / 2 + 0, 50 + 1, 1, -1);
+	draw_character_ex(swap_screen, bmp, 80 - bmp->w / 2, 50, 4, -1);
 	
 	blit_to_screen(swap_screen);
 
@@ -1061,11 +1059,11 @@ void init_player(Tplayer *p, Tmap *m) {
 
 // draws text with an outline
 void textout_outline(BITMAP *bmp, const char *txt, int x, int y) {
-	textout(bmp, data[THE_FONT].dat, txt, x+1, y, 1);
-	textout(bmp, data[THE_FONT].dat, txt, x-1, y, 1);
-	textout(bmp, data[THE_FONT].dat, txt, x, y+1, 1);
-	textout(bmp, data[THE_FONT].dat, txt, x, y-1, 1);
-	textout(bmp, data[THE_FONT].dat, txt, x, y, 4);
+	textout_ex(bmp, data[THE_FONT].dat, txt, x+1, y, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, txt, x-1, y, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, txt, x, y+1, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, txt, x, y-1, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, txt, x, y, 4, -1);
 }
 
 
@@ -1114,7 +1112,7 @@ void show_lets_go() {
 		}
 
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 
 		// draw stuff
 		draw_frame(swap_screen, 1);
@@ -1156,7 +1154,7 @@ void show_game_over() {
 		}
 
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 
 		// draw stuff
 		draw_frame(swap_screen, 1);
@@ -1218,7 +1216,7 @@ void show_custom_ending() {
 		}
 
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 
 		// draw stuff
 		draw_custom_ending(swap_screen);
@@ -1334,7 +1332,7 @@ void show_cutscene(int level) {
 		}
 
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 
 		// draw stuff
 		blit(swap2, swap_screen, 0, 0, 0, 0, 160, 120);
@@ -1408,12 +1406,12 @@ void draw_select_starting_level(BITMAP *bmp, int level, int min, int max) {
 
 	sprintf(buf, "%s %d %s", (level > min ? "<" : " "), level, (level < max ? ">" : " "));
 	clear_bitmap(stuff);
-	textout_centre(stuff, data[THE_FONT].dat, buf, stuff->w/2 + 1, 1, 2);
-	textout_centre(stuff, data[THE_FONT].dat, buf, stuff->w/2, 0, 1);
+	textout_centre_ex(stuff, data[THE_FONT].dat, buf, stuff->w/2 + 1, 1, 2, -1);
+	textout_centre_ex(stuff, data[THE_FONT].dat, buf, stuff->w/2, 0, 1, -1);
 	stretch_sprite(bmp, stuff, 80 - 4*stuff->w/2, 30, 4*stuff->w, 4*stuff->h);
 
-	textout_centre(bmp, data[THE_FONT].dat, "SELECT START LEVEL", 80, 90, 1);
-	textout_centre(bmp, data[THE_FONT].dat, "SELECT START LEVEL", 79, 89, 4);
+	textout_centre_ex(bmp, data[THE_FONT].dat, "SELECT START LEVEL", 80, 90, 1, -1);
+	textout_centre_ex(bmp, data[THE_FONT].dat, "SELECT START LEVEL", 79, 89, 4, -1);
 
 	if (options.one_hundred) {
 		if (game_count & 32 || game_count & 16) draw_sprite(bmp, data[SHIP100].dat, xpos, 2);
@@ -2304,7 +2302,7 @@ int do_pause_menu(BITMAP *bg) {
 		if (is_fire(&ctrl) || is_jump(&ctrl)) done = 1;
 		if (keypressed()) done = 1;
 		if (key[KEY_ESC]) done = -1;
-		yield_timeslice();
+		rest(0);
 	}
 
 	if (done == -1) {
@@ -2454,7 +2452,7 @@ int play(int level) {
 		}
 		
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 
 		// draw 
 		frame_count ++;
@@ -2485,20 +2483,20 @@ void draw_title(BITMAP *bmp, int tick) {
 
 	y = 60;
 	x = 50;
-	textout(bmp, data[THE_FONT].dat, start_string, x+1, y+1, 1);
-	textout(bmp, data[THE_FONT].dat, start_string, x, y, 4);
+	textout_ex(bmp, data[THE_FONT].dat, start_string, x+1, y+1, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, start_string, x, y, 4, -1);
 
 	y += step;
-	textout(bmp, data[THE_FONT].dat, "HIGH SCORES", x+1, y+1, 1);
-	textout(bmp, data[THE_FONT].dat, "HIGH SCORES", x, y, 4);
+	textout_ex(bmp, data[THE_FONT].dat, "HIGH SCORES", x+1, y+1, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, "HIGH SCORES", x, y, 4, -1);
 
 	y += step;
-	textout(bmp, data[THE_FONT].dat, "EDITOR", x+1, y+1, 1);
-	textout(bmp, data[THE_FONT].dat, "EDITOR", x, y, 4);
+	textout_ex(bmp, data[THE_FONT].dat, "EDITOR", x+1, y+1, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, "EDITOR", x, y, 4, -1);
 
 	y += step;
-	textout(bmp, data[THE_FONT].dat, "QUIT", x+1, y+1, 1);
-	textout(bmp, data[THE_FONT].dat, "QUIT", x, y, 4);
+	textout_ex(bmp, data[THE_FONT].dat, "QUIT", x+1, y+1, 1, -1);
+	textout_ex(bmp, data[THE_FONT].dat, "QUIT", x, y, 4, -1);
 
 	draw_sprite(bmp, data[POINTER].dat, x - 25 + fixtoi(3 * fcos(itofix(tick << 2))), 44 + menu_choice * step);
 }
@@ -2550,7 +2548,7 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
         string[i] = letters[current_letter];
 		string[i + 1] = '\0';
         blit(block, bmp, 0, 0, pos_x - 1, pos_y - 1, block->w, block->h);
-        textout(bmp, f, string, pos_x, pos_y, colour);
+        textout_ex(bmp, f, string, pos_x, pos_y, colour, -1);
 		blit_to_screen(bmp);
 
 		if (pad != NULL) {
@@ -2736,7 +2734,7 @@ int do_main_menu() {
 		}
 
 		// let other processes play
-		yield_timeslice();
+		rest(0);
 
 		// draw 
 		frame_count ++;

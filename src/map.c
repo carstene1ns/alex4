@@ -212,7 +212,7 @@ void draw_map(BITMAP *bmp, Tmap *sm, int dx, int dy, int w, int h, int edit) {
 	
 	if (sm == NULL) return;
 	
-	set_clip(bmp, dx, dy, dx+w-1, dy+h-1);
+	set_clip_rect(bmp, dx, dy, dx+w-1, dy+h-1);
 	
 	for(y=0;y<7;y++) {
 		for(x=0;x<11;x++) {
@@ -262,13 +262,13 @@ void draw_map(BITMAP *bmp, Tmap *sm, int dx, int dy, int w, int h, int edit) {
 
 				if (edit) {
 					if (sm->dat[pos].type == MAP_DEAD) {
-						textout(bmp, font, "D", dx + x*16 + ax, dy + y*16 + ay, 0);
+						textout_ex(bmp, font, "D", dx + x*16 + ax, dy + y*16 + ay, 0, -1);
 					}
 					if (sm->dat[pos].type == MAP_EXIT) {
-						textout(bmp, font, "XT", dx + x*16 + ax, dy + y*16 + ay, 255);
+						textout_ex(bmp, font, "XT", dx + x*16 + ax, dy + y*16 + ay, 255, -1);
 					}
 					if (sm->dat[pos].type == MAP_BRK) {
-						textout(bmp, font, "GL", dx + x*16 + ax, dy + y*16 + ay, 255);
+						textout_ex(bmp, font, "GL", dx + x*16 + ax, dy + y*16 + ay, 255, -1);
 					}
 					if (sm->dat[pos].type == MAP_ENEMY1) {
 						draw_sprite(bmp, sm->data[ENEMY1_01 + ((ABS(game_count) >> 3) % 4)].dat, dx + x*16 + ax, dy + y*16 + ay);
@@ -299,7 +299,7 @@ void draw_map(BITMAP *bmp, Tmap *sm, int dx, int dy, int w, int h, int edit) {
 		}
 	}
 
-	set_clip(bmp, 0, 0, SCREEN_W - 1, SCREEN_H - 1);
+	set_clip_rect(bmp, 0, 0, SCREEN_W - 1, SCREEN_H - 1);
 	
 }
 

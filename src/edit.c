@@ -69,8 +69,8 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 		}
 	
 		// show stuff
-		textprintf(bmp, data[THE_FONT].dat, 1, 1, 0, "TILE: %d,%d", tx, ty);
-		textprintf(bmp, data[THE_FONT].dat, 1, 11, 0, "SIZE: %d,%d", map->width, map->height);
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, 1, 0, -1, "TILE: %d,%d", tx, ty);
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, 11, 0, -1, "SIZE: %d,%d", map->width, map->height);
 
 		// show start pos
 		x = (ABS(map->start_x) << 4) - map->offset_x;
@@ -80,7 +80,7 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 	
 		// draw status bar
 		rectfill(bmp, 0, 110, 159, 119, 1);
-		textprintf(bmp, data[THE_FONT].dat, 1, 111, 4, "EDITING: %s", get_filename(edit_path_and_file));
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, 111, 4, -1, "EDITING: %s", get_filename(edit_path_and_file));
 	}
 	else if (edit_mode == EDIT_MODE_SELECT) {	// draw tile palette
 		// calculate offset depending on mouse pointer
@@ -104,16 +104,16 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 	else if (edit_mode == EDIT_MODE_STATS) {	// draw map properties
 		int ty = 16;
 		clear_to_color(bmp, 3);
-		textprintf(bmp, data[THE_FONT].dat, 1, 1, 1, "%s (props)", get_filename(edit_path_and_file));	
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, 1, 1, -1, "%s (props)", get_filename(edit_path_and_file));
 		line(bmp, 0, 10, 159, 10, 1);
-		textprintf(bmp, data[THE_FONT].dat, 1, ty+=10, 1, "Win by:");
-		textprintf(bmp, data[THE_FONT].dat, 1, ty+=10, 1, "  1) reach exit (%s)", (map->win_conditions & MAP_WIN_EXIT ? "X" : " "));
-		textprintf(bmp, data[THE_FONT].dat, 1, ty+=10, 1, "  2) kill boss  (%s)", (map->win_conditions & MAP_WIN_KILL_GUARDIAN ? "X" : " "));
-		textprintf(bmp, data[THE_FONT].dat, 1, ty+=10, 1, "  3) kill all   (%s)", (map->win_conditions & MAP_WIN_KILL_ALL ? "X" : " "));
-		textprintf(bmp, data[THE_FONT].dat, 1, ty+=10, 1, "4) Boss level:  (%s)", (map->boss_level ? "X" : " "));
-		textprintf(bmp, data[THE_FONT].dat, 1, ty+=10, 1, "5) Name: %s", map->name);
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "Win by:");
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "  1) reach exit (%s)", (map->win_conditions & MAP_WIN_EXIT ? "X" : " "));
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "  2) kill boss  (%s)", (map->win_conditions & MAP_WIN_KILL_GUARDIAN ? "X" : " "));
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "  3) kill all   (%s)", (map->win_conditions & MAP_WIN_KILL_ALL ? "X" : " "));
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "4) Boss level:  (%s)", (map->boss_level ? "X" : " "));
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "5) Name: %s", map->name);
 
-		textprintf(bmp, data[THE_FONT].dat, 1, 110, 1, "F1: back to editor");
+		textprintf_ex(bmp, data[THE_FONT].dat, 1, 110, 1, -1, "F1: back to editor");
 	}
 
 	if (edit_mode != EDIT_MODE_STATS) {
