@@ -408,8 +408,8 @@ int is_ground(Tmap *sm , int x, int y) {
 		else return mask;
 	}
 
-	if (mask == 5 && oy > 31 - ox) return mask; // 45 degree slope / 
-	if (mask == 6 && oy > ox) return mask;		// 45 degree slope \
+	if (mask == 5 && oy > 31 - ox) return mask; // 45 degree slope /     (med)
+	if (mask == 6 && oy > ox) return mask;		// 45 degree slope \ (med)
 
 	// the not so simple ones
 	if (mask == 3 && oy > 31 - ox / 2) return mask;	// 22 degree slope / (low)
