@@ -2164,7 +2164,7 @@ void check_alex_with_enemies() {
 
 // calculates camera pos for map m considering player p
 void calculate_camera_pos(Tplayer *p, Tmap *m) {
-	static camera_type = 1;
+	static int camera_type = 1;
 
 	if (p->actor->status == AC_BALL) {
 		camera_type = 2;
