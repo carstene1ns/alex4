@@ -903,7 +903,8 @@ void s_check_collision(Tspace_object *array_a, int num_a, Tspace_object *array_b
 									s_var.score += 1000000;
 								}
 								else {  // increase power
-									s_var.power_level = MIN(s_var.power_level ++, 7);
+									s_var.power_level++;
+									s_var.power_level = MIN(s_var.power_level, 7);
 								}
 								play_sound_id(SMPL_HEART);	
 
