@@ -15,10 +15,10 @@ $(TARGET): $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(DEFINES) -o $@ -c $<
 
 install: $(TARGET)
-	mkdir -p $(PREFIX)/bin
-	mkdir -p $(DATADIR)
-	install -p -m 755 $(TARGET) $(PREFIX)/bin
-	install -p -m 644 ../data/*.dat $(DATADIR)
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	mkdir -p $(DESTDIR)$(DATADIR)
+	install -p -m 755 $(TARGET) $(DESTDIR)$(PREFIX)/bin
+	install -p -m 644 ../data/*.dat $(DESTDIR)$(DATADIR)
 
 clean:
 	rm -f $(OBJS) $(TARGET) *~
