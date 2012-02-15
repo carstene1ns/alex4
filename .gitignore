@@ -1,2 +1,6 @@
 alex4
 *.o
+/src/alex4.hi
+/src/alex4.sav
+/src/data
+/src/log.txt
