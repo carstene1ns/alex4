@@ -26,12 +26,26 @@
 
 // saves the data structure to disk
 void save_options(Toptions *o, PACKFILE *fp) {
-	pack_fwrite(o, sizeof(Toptions), fp);
+	int i;
+	pack_iputl(o->max_levels, fp);
+	for (i = 0; i < MAX_LEVELS; ++i)
+		pack_iputl(o->cherries[i], fp);
+	for (i = 0; i < MAX_LEVELS; ++i)
+		pack_iputl(o->stars[i], fp);
+	pack_iputl(o->use_vsync, fp);
+	pack_iputl(o->one_hundred, fp);
 }
 
 // loads the data structure from disk
 void load_options(Toptions *o, PACKFILE *fp) {
-	pack_fread(o, sizeof(Toptions), fp);
+	int i;
+	o->max_levels = pack_igetl(fp);
+	for (i = 0; i < MAX_LEVELS; ++i)
+		o->cherries[i] = pack_igetl(fp);
+	for (i = 0; i < MAX_LEVELS; ++i)
+		o->stars[i] = pack_igetl(fp);
+	o->use_vsync = pack_igetl(fp);
+	o->one_hundred = pack_igetl(fp);
 }
 
 // resets all data

@@ -117,9 +117,12 @@ int load_hisc_table(Thisc *table, PACKFILE *fp) {
 	for(i=0; i<MAX_SCORES; i++) {
 		int c_disk, c_real;
 		// load entry
-		pack_fread(&table[i], sizeof(Thisc), fp);
+		pack_fread(&table[i].name, sizeof(table[i].name), fp);
+		pack_getc(fp); pack_getc(fp); // 2 bytes padding
+		table[i].score = pack_igetl(fp);
+		table[i].level = pack_igetl(fp);
 		// load checksum
-		pack_fread(&c_disk, sizeof(int), fp);
+		c_disk = pack_igetl(fp);
 		// generate check sum
 		c_real = generate_checksum(&table[i]);
 		// compare checksums
@@ -137,11 +140,14 @@ void save_hisc_table(Thisc *table, PACKFILE *fp) {
 	for(i=0; i<MAX_SCORES; i++) {
 		int checksum;
 		// save entry
-		pack_fwrite(&table[i], sizeof(Thisc), fp);
+		pack_fwrite(&table[i].name, sizeof(table[i].name), fp);
+		pack_putc(0, fp); pack_putc(0, fp); // 2 bytes padding
+		pack_iputl(table[i].score, fp);
+		pack_iputl(table[i].level, fp);
 		// generate check sum
 		checksum = generate_checksum(&table[i]);
 		// save checksum
-		pack_fwrite(&checksum, sizeof(int), fp);
+		pack_iputl(checksum, fp);
 	}
 }
 

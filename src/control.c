@@ -93,10 +93,24 @@ int is_any(Tcontrol *c)      { return (c->flags              ? TRUE : FALSE); }
 
 // saves the control config to disk using FP
 void save_control(Tcontrol *c, PACKFILE *fp) {
-	pack_fwrite(c, sizeof(Tcontrol), fp);
+	pack_iputl(c->use_joy, fp);
+	pack_iputl(c->key_left, fp);
+	pack_iputl(c->key_right, fp);
+	pack_iputl(c->key_up, fp);
+	pack_iputl(c->key_down, fp);
+	pack_iputl(c->key_fire, fp);
+	pack_iputl(c->key_jump, fp);
+	pack_putc(c->flags, fp);
 }
 
 // loads the control config from disk using FP
 void load_control(Tcontrol *c, PACKFILE *fp) {
-	pack_fread(c, sizeof(Tcontrol), fp);
+	c->use_joy = pack_igetl(fp);
+	c->key_left = pack_igetl(fp);
+	c->key_right = pack_igetl(fp);
+	c->key_up = pack_igetl(fp);
+	c->key_down = pack_igetl(fp);
+	c->key_fire = pack_igetl(fp);
+	c->key_jump = pack_igetl(fp);
+	c->flags = pack_getc(fp);
 }
