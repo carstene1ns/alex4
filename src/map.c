@@ -76,28 +76,30 @@ static void mem_to_int(int *dest, unsigned char *mem)
 #endif
 }
 
-static void fread_int(int *dest, FILE *fp)
+static int fread_int(int *dest, FILE *fp)
 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	fread(dest, 4, 1, fp);
+	return (fread(dest, 4, 1, fp));
 #else
 	unsigned char buf[4];
-	fread(buf, 1, 4, fp);
+	if (fread(buf, 1, 4, fp) < 4)
+		return 0;
 	mem_to_int(dest, buf);
+	return 1;
 #endif
 }
 
-static void fwrite_int(const int *src, FILE *fp)
+static int fwrite_int(const int *src, FILE *fp)
 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	fwrite(src, 4, 1, fp);
+	return (fwrite(src, 4, 1, fp));
 #else
 	unsigned char buf[4];
 	buf[0] = *src;
 	buf[1] = *src >> 8;
 	buf[2] = *src >> 16;
 	buf[3] = *src >> 24;
-	fwrite(buf, 1, 4, fp);
+	return (fwrite(buf, 1, 4, fp) == 4? 1: 0);
 #endif
 }
 
@@ -114,10 +116,13 @@ Tmap *load_map(const char *fname) {
 	}
 
 	// does the header match?
-	fread(header, 6, 1, fp);
-	if (header[0] != 'A' && header[1] != 'X' && header[2] != '4' && header[3] != 'M' && header[4] != 'A' && header[5] != 'P') {
-		return NULL;
+	if (fread(header, 6, 1, fp) != 1) {
 		fclose(fp);
+		return NULL;
+	}
+	if (header[0] != 'A' && header[1] != 'X' && header[2] != '4' && header[3] != 'M' && header[4] != 'A' && header[5] != 'P') {
+		fclose(fp);
+		return NULL;
 	}
 
 	// get memory
@@ -132,24 +137,34 @@ Tmap *load_map(const char *fname) {
 	// the code below reads these struct dumps in an arch neutral manner
 	// Note this dumps contains pointers, these are not used because these
 	// ofcourse point to some no longer valid address.
-	fread(m, 64, 1, fp);             // first 64 bytes data
-	fread_int(&(m->width), fp);
-	fread_int(&(m->height), fp);
-	fread(header, 4, 1, fp);         // skip the first pointer
-	fread_int(&(m->offset_x), fp);
-	fread_int(&(m->offset_y), fp);
-	fread(header, 4, 1, fp);         // skip the second pointer
-	fread_int(&(m->start_x), fp);
-	fread_int(&(m->start_y), fp);
-
-	// read map data
-	m->dat = malloc(m->width * m->height * sizeof(Tmappos));
-	if (m->dat == NULL) {
+	if (fread(m, 64, 1, fp) +           // first 64 bytes data
+		fread_int(&(m->width), fp) +
+		fread_int(&(m->height), fp) +
+		fread(header, 4, 1, fp) +       // skip the first pointer
+		fread_int(&(m->offset_x), fp) +
+		fread_int(&(m->offset_y), fp) +
+		fread(header, 4, 1, fp) +       // skip the second pointer
+		fread_int(&(m->start_x), fp) +
+		fread_int(&(m->start_y), fp) != 9) {
+		fclose(fp);
 		free(m);
 		return NULL;
 	}
 
-	fread(m->dat, sizeof(Tmappos), m->width * m->height, fp);
+	// read map data
+	m->dat = malloc(m->width * m->height * sizeof(Tmappos));
+	if (m->dat == NULL) {
+		fclose(fp);
+		free(m);
+		return NULL;
+	}
+
+	if (fread(m->dat, sizeof(Tmappos), m->width * m->height, fp) != (size_t)m->width * m->height) {
+		fclose(fp);
+		free(m->dat);
+		free(m);
+		return NULL;
+	}
 
 	// close file
 	fclose(fp);
@@ -228,24 +243,33 @@ int save_map(Tmap *m, char *fname) {
 	if (fp == NULL) return FALSE;
 
 	// write header
-	fwrite(header, 6, 1, fp);
+	if (fwrite(header, 6, 1, fp) != 1) {
+		fclose(fp);
+		return FALSE;
+	}
 
 	// write datastruct
 	// a mapfile should contain a raw dump of the Tmap struct as made on an
 	// i386 the code below writes a struct dump as an i386 in an arch
 	// neutral manner
-	fwrite(m, 64, 1, fp);             // first 64 bytes data
-	fwrite_int(&(m->width), fp);
-	fwrite_int(&(m->height), fp);
-	fwrite(header, 4, 1, fp);         // skip the first pointer
-	fwrite_int(&(m->offset_x), fp);
-	fwrite_int(&(m->offset_y), fp);
-	fwrite(header, 4, 1, fp);         // skip the second pointer
-	fwrite_int(&(m->start_x), fp);
-	fwrite_int(&(m->start_y), fp);
+	if (fwrite(m, 64, 1, fp) +           // first 64 bytes data
+		fwrite_int(&(m->width), fp) +
+		fwrite_int(&(m->height), fp) +
+		fwrite(header, 4, 1, fp) +       // skip the first pointer
+		fwrite_int(&(m->offset_x), fp) +
+		fwrite_int(&(m->offset_y), fp) +
+		fwrite(header, 4, 1, fp) +       // skip the second pointer
+		fwrite_int(&(m->start_x), fp) +
+		fwrite_int(&(m->start_y), fp) != 9) {
+		fclose(fp);
+		return FALSE;
+	}
 
 	// write map data
-	fwrite(m->dat, sizeof(Tmappos), m->width * m->height, fp);
+	if (fwrite(m->dat, sizeof(Tmappos), m->width * m->height, fp) != (size_t)m->width * m->height) {
+		fclose(fp);
+		return FALSE;
+	}
 
 	// close file
 	fclose(fp);
