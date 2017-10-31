@@ -83,8 +83,8 @@ typedef struct {
 	int difficulty;
 
 	// player related
-	long unsigned int score;
-	long unsigned int show_score;
+	unsigned int score;
+	unsigned int show_score;
 	int lives;
 	int power_gauge;
 	int power_level;

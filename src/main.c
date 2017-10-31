@@ -38,6 +38,7 @@
 #include "main.h"
 #include "edit.h"
 #include "shooter.h"
+#include "unix.h"
 
 #include "../data/data.h"
 
@@ -66,7 +67,6 @@ PALETTE org_pal;
 Tscroller hscroll;
 Thisc *hisc_table;
 Thisc *hisc_table_space;
-char working_directory[1024];
 
 // the map
 Tmap *map = NULL;
@@ -126,6 +126,7 @@ int menu_choice = 1;
 int playing_original_game = 1;
 int init_ok = 0;
 
+static FILE* log_fp = NULL;
 
 
 // // // // // // // // // // // // // // // // // // // // // 
@@ -154,20 +155,18 @@ char *get_init_string() {
 // loggs the text to the text file
 void log2file(char *format, ...) {
 	va_list ptr; /* get an arg pointer */
- 	FILE *fp;
 	
-	fp = fopen("log.txt", "at");
-	if (fp) {
+	if (log_fp) {
 		/* initialize ptr to point to the first argument after the format string */
 		va_start(ptr, format);
  
 		/* Write to logfile. */
-		vfprintf(fp, format, ptr); // Write passed text.
-		fprintf(fp, "\n"); // New line..
+		vfprintf(log_fp, format, ptr); // Write passed text.
+		fprintf(log_fp, "\n"); // New line..
  
 		va_end(ptr);
  
-		fclose(fp);
+		fflush(log_fp);
 	}
 
 }
@@ -618,13 +617,23 @@ int init_game(const char *map_file) {
 	BITMAP *bmp;
 	int i;
 	int w, h;
+#ifdef __unix__
+	char filename[512];
+	char *homedir = get_homedir();
+#endif
 
 	log2file("\nInit routines:");
 
 	// various allegro things
 	log2file(" initializing allegro");
 	garble_string(init_string, 53);
+#ifdef __unix__
+	snprintf(filename, sizeof(filename), "%s/.alex4/alex4.ini",
+		homedir? homedir:".");
+	override_config_file(filename);
+#else
 	set_config_file("alex4.ini");
+#endif
 	
 	// install timers
 	log2file(" installing timers");
@@ -693,6 +702,7 @@ int init_game(const char *map_file) {
 	textout_centre_ex(swap_screen, font, "loading...", 320, 200, 1, -1);
 	blit_to_screen(swap_screen);
 
+#ifndef __unix__
 	// set switch modes and callbacks
 	if (set_display_switch_mode(SWITCH_PAUSE) < 0)
 		log2file("  * display switch mode failed");
@@ -700,6 +710,7 @@ int init_game(const char *map_file) {
 		log2file("  * display switch in failed");
 	if (set_display_switch_callback(SWITCH_OUT, display_switch_out) < 0)
 		log2file("  * display switch out failed");
+#endif
 
 
 	// set win title (no! really???)
@@ -716,7 +727,7 @@ int init_game(const char *map_file) {
 	// load data
 	log2file(" loading data");
 	packfile_password(init_string);
-	data = load_datafile("data/data.dat");
+	data = load_datafile(DATADIR "data.dat");
 	packfile_password(NULL);
 	if (data == NULL) {
     	log2file("  *** failed");
@@ -726,7 +737,13 @@ int init_game(const char *map_file) {
 
 	// load options
 	log2file(" loading options");
+#ifdef __unix__
+	snprintf(filename, sizeof(filename), "%s/.alex4/alex4.sav",
+		homedir? homedir:".");
+	pf = pack_fopen(filename, "rp");
+#else
 	pf = pack_fopen("alex4.sav", "rp");
+#endif
 	if (pf) {
 		load_options(&options, pf);
 		pack_fclose(pf);
@@ -738,7 +755,13 @@ int init_game(const char *map_file) {
 
 	// loading highscores
 	log2file(" loading hiscores");
+#ifdef __unix__
+	snprintf(filename, sizeof(filename), "%s/.alex4/alex4.hi",
+		homedir? homedir:".");
+	pf = pack_fopen(filename, "rp");
+#else
 	pf = pack_fopen("alex4.hi", "rp");
+#endif
 	if (pf) {
 		load_hisc_table(hisc_table, pf);
 		load_hisc_table(hisc_table_space, pf);
@@ -774,7 +797,7 @@ int init_game(const char *map_file) {
 		log2file(" loading original maps");
 		packfile_password(init_string);
 		num_levels = -1;  // skip end object when counting
-		maps = load_datafile_callback("data/maps.dat", count_maps_callback);
+		maps = load_datafile_callback(DATADIR "maps.dat", count_maps_callback);
 		packfile_password(NULL);
 		if (maps == NULL) {
 	    	log2file("  *** failed");
@@ -833,7 +856,7 @@ int init_game(const char *map_file) {
 	// install sound
 	log2file(" installing sound");
    	set_volume_per_voice(0);
-	switch(get_config_int("sound", "sound_device", 0)) {
+	switch(get_config_int("sound", "sound_device", 1)) {
 		case 1:
 			i = DIGI_AUTODETECT;
 			log2file("  DIGI_AUTODETECT selected (%d)", i);
@@ -883,9 +906,9 @@ int init_game(const char *map_file) {
 		if (get_config_int("sound", "use_sound_datafile", 1)) {
 			log2file(" loading sound datafile");
 			packfile_password(init_string);
-			sfx_data = load_datafile("data/sfx_44.dat");
+			sfx_data = load_datafile(DATADIR "sfx_44.dat");
 			if (sfx_data == NULL) {
-				sfx_data = load_datafile("data/sfx_22.dat");
+				sfx_data = load_datafile(DATADIR "sfx_22.dat");
 				log2file("  sfx_44.dat not found");
 				s = 0;
 			}
@@ -984,6 +1007,10 @@ int init_game(const char *map_file) {
 void uninit_game() {
 	int i;
 	PACKFILE *pf;
+#ifdef __unix__
+	char filename[512];
+	char *homedir = get_homedir();
+#endif
 
 	log2file("\nExit routines:");
 
@@ -1002,14 +1029,26 @@ void uninit_game() {
 	// only save if everything was inited ok!
 	if (init_ok) {
 		log2file(" saving options");
+#ifdef __unix__
+		snprintf(filename, sizeof(filename), "%s/.alex4/alex4.sav",
+			homedir? homedir:".");
+		pf = pack_fopen(filename, "wp");
+#else
 		pf = pack_fopen("alex4.sav", "wp");
+#endif
 		if (pf) {
 			save_options(&options, pf);
 			pack_fclose(pf);
 		}
 		
 		log2file(" saving highscores");
+#ifdef __unix__
+		snprintf(filename, sizeof(filename), "%s/.alex4/alex4.hi",
+			homedir? homedir:".");
+		pf = pack_fopen(filename, "wp");
+#else
 		pf = pack_fopen("alex4.hi", "wp");
+#endif
 		if (pf) {
 			save_hisc_table(hisc_table, pf);
 			save_hisc_table(hisc_table_space, pf);
@@ -1356,7 +1395,7 @@ void show_scores(int space, Thisc *table) {
 	if (space) {
 		// get space bg
 		packfile_password(init_string);
-		df = load_datafile_object("data/a45.dat", "BG1");
+		df = load_datafile_object(DATADIR "a45.dat", "BG1");
 		packfile_password(NULL);
 		if (df != NULL)	{
 			bg = df->dat;
@@ -2854,6 +2893,10 @@ int do_main_menu() {
 			}
 			else {
 				PACKFILE *pf;
+#ifdef __unix__
+				char filename[512];
+				char *homedir = get_homedir();
+#endif
 				log2file(" level complete");
 				if (got_sound) stop_music();
 				if (level < MAX_LEVELS && playing_original_game) {
@@ -2888,7 +2931,14 @@ int do_main_menu() {
 
 				// save options
 				log2file(" saving options");
+#ifdef __unix__
+				snprintf(filename, sizeof(filename),
+					"%s/.alex4/alex4.sav",
+					homedir? homedir:".");
+				pf = pack_fopen(filename, "wp");
+#else
 				pf = pack_fopen("alex4.sav", "wp");
+#endif
 				if (pf) {
 					save_options(&options, pf);
 					pack_fclose(pf);
@@ -2982,24 +3032,36 @@ int do_main_menu() {
 
 // main
 int main(int argc, char **argv) {   
-	FILE *fp;
 	int i;
 	char full_path[1024];
+#ifndef __unix__
+	char working_directory[1024];
+#else
+	char *homedir = get_homedir();
+#endif
 
 	// init allegro
 	allegro_init();
 
+#ifdef __unix__
+	// start logfile
+	snprintf(full_path, sizeof(full_path), "%s/.alex4",
+		homedir? homedir:".");
+	check_and_create_dir(full_path);
+	snprintf(full_path, sizeof(full_path), "%s/.alex4/log.txt",
+		homedir? homedir:".");
+	log_fp = fopen(full_path, "wt");
+#else
 	// get working directory
 	get_executable_name(full_path, 1024);
 	replace_filename(working_directory, full_path, "", 1024);
 	chdir(working_directory);
 
-
 	// start logfile
-	fp = fopen("log.txt", "wt");
-	if (fp) {
-		fprintf(fp, "Alex 4 (%s) - log file\n-------------------\n", GAME_VERSION_STR);
-		fclose(fp);
+	log_fp = fopen("log.txt", "wt");
+#endif
+	if (log_fp) {
+		fprintf(log_fp, "Alex 4 (%s) - log file\n-------------------\n", GAME_VERSION_STR);
 	}
 
 	// log program arguments
@@ -3007,7 +3069,9 @@ int main(int argc, char **argv) {
 	for(i = 0; i < argc; i ++) {
 		log2file("   %s", argv[i]);
 	}
+#ifndef __unix__
 	log2file("Working directory is:\n   %s", working_directory);
+#endif
 
 	// test wether to play real game
 	// or custom levels
@@ -3035,6 +3099,8 @@ int main(int argc, char **argv) {
 	uninit_game();
 	allegro_exit();
 	log2file("\nDone...\n");
+	if (log_fp)
+		fclose(log_fp);
 
 	return 0;
 } END_OF_MAIN(); 
