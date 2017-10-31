@@ -280,7 +280,7 @@ void wait_key(int seconds) {
 		if (keypressed()) kp = 1;
 		if (is_fire(&ctrl) || is_jump(&ctrl)) kp = 1;
 		if (got_sound && dp != NULL) al_poll_duh(dp);
-		while(!cycle_count);
+		rest(20);
 	}
 }
 
@@ -322,7 +322,8 @@ void fade_rest(int msec, AL_DUH_PLAYER *duh_player) {
 		cycle_count = 0;
 		if (got_sound && duh_player != NULL) al_poll_duh(duh_player);
 		i ++;
-		while(!cycle_count)	rest(0);
+		while(!cycle_count)
+			rest(1);
 	}
 }
 
@@ -1125,6 +1126,10 @@ void show_lets_go() {
 
 	cycle_count = 0;
 	while(mode != 3) {
+		// Let other processes play
+		while(cycle_count == 0)
+			rest(1);
+
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
@@ -1150,9 +1155,6 @@ void show_lets_go() {
 			cycle_count --;
 		}
 
-		// let other processes play
-		rest(0);
-
 		// draw stuff
 		draw_frame(swap_screen, 1);
 		draw_sprite(swap_screen, go, x, 35);
@@ -1172,6 +1174,10 @@ void show_game_over() {
 
 	cycle_count = 0;
 	while(mode != 3) {
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
+
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
@@ -1191,9 +1197,6 @@ void show_game_over() {
 			// move on
 			cycle_count --;
 		}
-
-		// let other processes play
-		rest(0);
 
 		// draw stuff
 		draw_frame(swap_screen, 1);
@@ -1235,6 +1238,10 @@ void show_custom_ending() {
 
 	cycle_count = 0;
 	while(!done) {
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
+
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
@@ -1253,9 +1260,6 @@ void show_custom_ending() {
 			// move on
 			cycle_count --;
 		}
-
-		// let other processes play
-		rest(0);
 
 		// draw stuff
 		draw_custom_ending(swap_screen);
@@ -1332,6 +1336,10 @@ void show_cutscene(int level) {
 	clear_keybuf();
 	cycle_count = 0;
 	while(mode != 3) {
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
+
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
@@ -1369,9 +1377,6 @@ void show_cutscene(int level) {
 			// move on
 			cycle_count --;
 		}
-
-		// let other processes play
-		rest(0);
 
 		// draw stuff
 		blit(swap2, swap_screen, 0, 0, 0, 0, 160, 120);
@@ -1486,6 +1491,10 @@ int select_starting_level() {
 
 	cycle_count = 0;
 	while(!done) {
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
+
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
@@ -2341,7 +2350,7 @@ int do_pause_menu(BITMAP *bg) {
 		if (is_fire(&ctrl) || is_jump(&ctrl)) done = 1;
 		if (keypressed()) done = 1;
 		if (key[KEY_ESC]) done = -1;
-		rest(0);
+		rest(20);
 	}
 
 	if (done == -1) {
@@ -2367,6 +2376,9 @@ int play(int level) {
 	game_status = GS_OK;
 	cycle_count = 0;
 	while(game_status == GS_OK) {
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
 
 		//  do logic
 		while(cycle_count > 0) {
@@ -2489,9 +2501,6 @@ int play(int level) {
 			
 			cycle_count --;
 		}
-		
-		// let other processes play
-		rest(0);
 
 		// draw 
 		frame_count ++;
@@ -2656,8 +2665,8 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
 
 		}
 
-		while(!cycle_count);
-
+		while(!cycle_count)
+			rest(1);
     }
 }
 
@@ -2691,6 +2700,9 @@ int do_main_menu() {
 	clear_keybuf();
 	cycle_count = 0;
 	while(status == GS_OK) {
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
 
 		//  do logic
 		while(cycle_count > 0) {
@@ -2771,9 +2783,6 @@ int do_main_menu() {
 
 			cycle_count --;
 		}
-
-		// let other processes play
-		rest(0);
 
 		// draw 
 		frame_count ++;
@@ -3019,7 +3028,8 @@ int do_main_menu() {
 		blit_to_screen(swap_screen);
 		fade_in_pal(100);
 		cycle_count = 0;
-		while(!key[KEY_ESC] && cycle_count < 200);
+		while(!key[KEY_ESC] && cycle_count < 200)
+			rest(50);
 		fade_out_pal(100);
 		clear(screen);
 	}

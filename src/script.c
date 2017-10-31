@@ -102,8 +102,8 @@ void esc_rest(int millis) {
 		cycle_count = 0;
 		poll_music();
 		count ++;
-		while(!cycle_count);
-		rest(0);
+		while(!cycle_count)
+			rest(20);
 	}
     if (key[KEY_ESC]) script_done = -1;
 }
@@ -498,6 +498,10 @@ void cmd_run(Ttoken *t) {
 	cycle_count = 0;
 	while(loops && !script_done) {
 
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
+
 		while(cycle_count > 0 && loops && !script_done) {
 			logic_count ++;
 
@@ -519,9 +523,6 @@ void cmd_run(Ttoken *t) {
 			loops --;
 			cycle_count --;
 		}
-
-		// let other processes play
-		rest(0);
 
 		// blit buffer to swap buffer
 		blit(buffer, swap_buffer, 0, 0, 0, 0, 160, 120);

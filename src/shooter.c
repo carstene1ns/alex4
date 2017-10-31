@@ -1132,7 +1132,10 @@ void s_run_shooter() {
 	game_count = 0;
 	s_activate_sign(0, -1);
 	while(playing || s_sign.alive) {
-		
+		// let other processes play
+		while(cycle_count == 0)
+			rest(1);
+
 		//  do logic
 		while(cycle_count > 0) {
 			logic_count ++;
@@ -1266,11 +1269,7 @@ void s_run_shooter() {
 			
 			cycle_count --;
 		}
-		
-		
-		// let other processes play
-		rest(0);
-		
+
 		// draw 
 		frame_count ++;
 		s_draw_frame(s_buffer);
