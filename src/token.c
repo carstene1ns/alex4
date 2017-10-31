@@ -18,7 +18,7 @@
  **************************************************************/
  
  
- 
+#define _XOPEN_SOURCE	700
 
 #include <stdio.h>
 #include <string.h>
@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////
 
 // creates a new token
-Ttoken *create_token(char *word) {
+Ttoken *create_token(const char *word) {
     Ttoken *tok = malloc(sizeof(Ttoken));
     if (tok != NULL) {
         tok->word = strdup(word);

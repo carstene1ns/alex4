@@ -41,7 +41,7 @@ void destroy_hisc_table(Thisc *);
 int qualify_hisc_table(Thisc *table, Thisc post);
 void sort_hisc_table(Thisc *table);
 void enter_hisc_table(Thisc *table, Thisc post);
-void reset_hisc_table(Thisc *table, char *name, int hi, int lo);
+void reset_hisc_table(Thisc *table, const char *name, int hi, int lo);
 int load_hisc_table(Thisc *table, PACKFILE *fp);
 void save_hisc_table(Thisc *table, PACKFILE *fp);
 

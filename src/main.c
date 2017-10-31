@@ -17,7 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
  
- 
+#define _XOPEN_SOURCE	700
  
 #include <allegro.h>
 #include <aldumb.h>
@@ -153,7 +153,7 @@ char *get_init_string() {
 
 
 // loggs the text to the text file
-void log2file(char *format, ...) {
+void log2file(const char *format, ...) {
 	va_list ptr; /* get an arg pointer */
 	
 	if (log_fp) {
@@ -254,7 +254,7 @@ void adjust_sound_id_ex(int id, int x) {
 
 
 // shows a little message
-void msg_box(char *str) {
+void msg_box(const char *str) {
 	if (got_sound) al_pause_duh(dp);
 	alert("Alex 4: Message", NULL, str, "OK", NULL, 0, 0);
 	if (got_sound) al_resume_duh(dp);
@@ -306,7 +306,7 @@ static void start_music(int startorder) {
 	{
 		sr = dumb_it_start_at_order(duh, n_channels, startorder);
 		dp = al_duh_encapsulate_sigrenderer(sr,
-			((float)(get_config_int("sound", "music_volume", 255)) / 255.0),
+			((get_config_int("sound", "music_volume", 255) * 1.0) / 255.0),
 			get_config_int("dumb", "buffer_size", 4096),
 			get_config_int("dumb", "sound_freq", 44100));
 		if (!dp) duh_end_sigrenderer(sr); // howto.txt doesn't mention that this is necessary! dumb.txt does ...
@@ -566,7 +566,7 @@ void draw_frame(BITMAP *bmp, int _status_bar) {
 
 
 // loads a sample from disk
-SAMPLE *load_path_sample(char *fname) {
+SAMPLE *load_path_sample(const char *fname) {
 	char buf[1024];
 	SAMPLE *s;
 	sprintf(buf, "%s/%s", get_config_string("sound", "sfx_path", "sfx"), fname);
@@ -583,6 +583,7 @@ SAMPLE *load_path_sample(char *fname) {
 // counts number of maps
 // invoked when loading the map datafile
 void count_maps_callback(DATAFILE *d) {
+	(void) d; /* unused */
 	num_levels ++;
 }
 
@@ -1580,7 +1581,7 @@ void new_game(int reset_player_data) {
 
 
 // tidies up after a map has been used
-void deinit_map(Tmap *m) {
+void deinit_map(void) {
 	int i;
 
 	// stop any playing sounds
@@ -1725,7 +1726,7 @@ void init_map(Tmap *m) {
 // starts a new level
 // level_id < 0 -> load fname
 // uses datafile map o/w
-void new_level(char *fname, int level_id, int draw) {
+void new_level(const char *fname, int level_id, int draw) {
 	int tox;
 	int i;
 	int x, y;
@@ -2368,7 +2369,7 @@ int do_pause_menu(BITMAP *bg) {
 
 
 // play the game!
-int play(int level) {
+int play(void) {
 	int i;
 	int playing_go_music = 0;
 
@@ -2820,8 +2821,8 @@ int do_main_menu() {
 			draw_frame(swap_screen, 1);
 			blit_to_screen(swap_screen);
 			fade_in_pal(100);
-			status = play(-1);
-			deinit_map(map);
+			status = play();
+			deinit_map();
 		}
 		else {
 			log2file(" *** failed");
@@ -2878,10 +2879,10 @@ int do_main_menu() {
 
 			// actual game starts here
 			show_lets_go();
-			status = play(level);
+			status = play();
 			// done playing level
 
-			deinit_map(map);
+			deinit_map();
 
 			// act on different outcomes
 			if (status == GS_GAME_DIED) {
@@ -3113,7 +3114,7 @@ int main(int argc, char **argv) {
 		fclose(log_fp);
 
 	return 0;
-} END_OF_MAIN(); 
+} END_OF_MAIN() 
 
 
 

@@ -102,7 +102,7 @@ static void fwrite_int(const int *src, FILE *fp)
 }
 
 // loads one splendind map from disk
-Tmap *load_map(char *fname) {
+Tmap *load_map(const char *fname) {
 	Tmap *m;
 	FILE *fp;
     char header[6];

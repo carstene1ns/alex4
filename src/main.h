@@ -63,13 +63,13 @@
 // functions
 char *get_init_string();
 void textout_outline_center(BITMAP *bmp, const char *txt, int cx, int y);
-void log2file(char *format, ...);
+void log2file(const char *format, ...);
 int do_pause_menu(BITMAP *bg);
 void take_screenshot(BITMAP *bmp);
 void set_map(Tmap *m);
-void msg_box(char *str);
+void msg_box(const char *str);
 void new_game(int reset_player_data);
-void new_level(char *fname, int level_id, int draw);
+void new_level(const char *fname, int level_id, int draw);
 Tactor *get_alex();
 void draw_frame(BITMAP *bmp, int draw_status_bar);
 void blit_to_screen(BITMAP *bmp);

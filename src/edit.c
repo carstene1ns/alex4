@@ -44,7 +44,7 @@ void set_edit_mode(int mode) {
 }
 
 // set the path for the current map
-void set_edit_path_and_file(char *str) {
+void set_edit_path_and_file(const char *str) {
 	strcpy(edit_path_and_file, str);
 	log2file("  edit path set to: <%s>", edit_path_and_file);
 }

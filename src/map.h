@@ -93,7 +93,7 @@ typedef struct {
 // functions
 Tmap *create_map(int w, int h);
 void destroy_map(Tmap *m);
-Tmap *load_map(char *fname);
+Tmap *load_map(const char *fname);
 Tmap *load_map_from_memory(void *mem);
 int save_map(Tmap *m, char *fname);
 void change_map_size(Tmap *m, int dw, int dh, int dir_flags);

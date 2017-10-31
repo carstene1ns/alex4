@@ -321,7 +321,7 @@ static void s_start_music(int startorder) {
 	s_stop_music();
 
 	{
-		s_music_vol = (float)(get_config_int("sound", "music_volume", 255)) / 255.0;
+		s_music_vol = (get_config_int("sound", "music_volume", 255) * 1.0) / 255.0;
 		s_sr = dumb_it_start_at_order(s_duh, n_channels, startorder);
 		s_dp = al_duh_encapsulate_sigrenderer(s_sr, 
 			s_music_vol,

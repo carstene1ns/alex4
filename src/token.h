@@ -32,7 +32,7 @@ typedef struct {
 
 
 // functions
-Ttoken *create_token(char *word);
+Ttoken *create_token(const char *word);
 void destroy_token(Ttoken *t);
 void flush_tokens(Ttoken *head);
 void insert_token(Ttoken *list, Ttoken *t);

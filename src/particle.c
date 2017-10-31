@@ -93,6 +93,7 @@ Tparticle *get_free_particle(Tparticle *p, int max) {
 
 // updates particle with map
 void update_particle_with_map(Tparticle *p, Tmap *m) {
+	(void) m; /* unused */
 	update_particle(p);
 
 	/* bouncing algo removed 

@@ -84,7 +84,7 @@ void enter_hisc_table(Thisc *table, Thisc post) {
 }
 
 // Resets the table to the values specified
-void reset_hisc_table(Thisc *table, char *name, int hi, int lo) {
+void reset_hisc_table(Thisc *table, const char *name, int hi, int lo) {
 	int i;
 	int d = (hi-lo)/(MAX_SCORES - 1);
 	int acc = lo;

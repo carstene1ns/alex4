@@ -30,7 +30,7 @@ void fps_counter(void) {
 	lps = logic_count;
 	logic_count = 0;
 }
-END_OF_FUNCTION(fps_counter);
+END_OF_FUNCTION(fps_counter)
 
 
 // keeps track of internal game speed
@@ -38,7 +38,7 @@ void cycle_counter(void) {
 	cycle_count++;
 	game_count++;
 }
-END_OF_FUNCTION(game_counter);
+END_OF_FUNCTION(game_counter)
 
 
 // initiates the timers
