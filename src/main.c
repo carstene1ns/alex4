@@ -81,6 +81,7 @@ Tactor actor[MAX_ACTORS];
 int editing = 0;
 
 // music and stuff
+static DUMBFILE *dmbf = NULL;
 static AL_DUH_PLAYER *dp = NULL;
 static DUH_SIGRENDERER *sr = NULL;
 static DUH *duh = NULL;
@@ -721,10 +722,11 @@ int init_game(const char *map_file) {
 
 	// register dumb
 	log2file(" registering dumb");
-	dumb_register_packfiles();
-    dumb_register_dat_mod(DUMB_DAT_MOD);
-	dumb_resampling_quality = get_config_int("dumb", "dumb_resampling_quality", 4);
-	dumb_it_max_to_mix = get_config_int("dumb", "dumb_it_max_to_mix", 128);
+	//dumb_register_packfiles();
+	//dumb_register_dat_mod(DUMB_DAT_MOD);
+	//dumb_resampling_quality = get_config_int("dumb", "dumb_resampling_quality", 4);
+	//dumb_it_max_to_mix = get_config_int("dumb", "dumb_it_max_to_mix", 128);
+
 
 	// load data
 	log2file(" loading data");
@@ -903,7 +905,9 @@ int init_game(const char *map_file) {
 	if (got_sound) {
 		int s = 0;
 		// load music
-        duh = (DUH *)data[MSC_GAME].dat;
+		//duh = (DUH *)data[MSC_GAME].dat;
+		dmbf = dumbfile_open_memory(data[MSC_GAME].dat, data[MSC_GAME].size);
+		duh = dumb_read_mod(dmbf, 0);
 		
 		if (get_config_int("sound", "use_sound_datafile", 1)) {
 			log2file(" loading sound datafile");
@@ -1070,6 +1074,7 @@ void uninit_game() {
 	}
 
 	log2file(" exiting dumb");
+	unload_duh(duh);
 	dumb_exit();
 
 	log2file(" exiting allegro");
