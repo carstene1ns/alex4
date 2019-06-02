@@ -1219,9 +1219,9 @@ void draw_custom_ending(BITMAP *bmp) {
 
 	blit(data[INTRO_BG].dat, bmp, 0, 0, 0, 0, 160, 120);
 
-	r = 70 + fixtoi(20 * fcos(itofix(game_count >> 1)) + 20 * fsin(itofix((int)(game_count / 2.7))) );
+	r = 70 + fixtoi(20 * fixcos(itofix(game_count >> 1)) + 20 * fixsin(itofix((int)(game_count / 2.7))) );
 	for(i = 0; i < 256; i += 32) 
-		draw_sprite(bmp, head, 80 - head->w/2 + fixtoi(r * fcos(itofix(game_count + i))), 60 - head->h/2 + fixtoi(r * fsin(itofix(game_count + i))));
+		draw_sprite(bmp, head, 80 - head->w/2 + fixtoi(r * fixcos(itofix(game_count + i))), 60 - head->h/2 + fixtoi(r * fixsin(itofix(game_count + i))));
 
 	draw_sprite_h_flip(bmp, data[ALEX].dat, 60, 40);
 	draw_sprite(bmp, data[LOLA].dat, 84, 40);
@@ -2552,7 +2552,7 @@ void draw_title(BITMAP *bmp, int tick) {
 	textout_ex(bmp, data[THE_FONT].dat, "QUIT", x+1, y+1, 1, -1);
 	textout_ex(bmp, data[THE_FONT].dat, "QUIT", x, y, 4, -1);
 
-	draw_sprite(bmp, data[POINTER].dat, x - 25 + fixtoi(3 * fcos(itofix(tick << 2))), 44 + menu_choice * step);
+	draw_sprite(bmp, data[POINTER].dat, x - 25 + fixtoi(3 * fixcos(itofix(tick << 2))), 44 + menu_choice * step);
 }
 
 
