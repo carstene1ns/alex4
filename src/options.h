@@ -16,14 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
 
-#ifndef _OPTIONS_H_
-#define _OPTIONS_H_
+#ifndef OPTIONS_H
+#define OPTIONS_H
 
-#include "allegro.h"
+#include <allegro.h>
 
 // number of levels to count cherries/stars on
 #define MAX_LEVELS		64
@@ -36,7 +33,6 @@ typedef struct {
 	int use_vsync;
 	int one_hundred;
 } Toptions;
-
 
 // functions
 void save_options(Toptions *o, PACKFILE *fp);

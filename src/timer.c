@@ -16,9 +16,6 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
 
 #include "allegro.h"
 #include "timer.h"
@@ -32,14 +29,12 @@ void fps_counter(void) {
 }
 END_OF_FUNCTION(fps_counter)
 
-
 // keeps track of internal game speed
 void cycle_counter(void) {
 	cycle_count++;
 	game_count++;
 }
 END_OF_FUNCTION(game_counter)
-
 
 // initiates the timers
 int install_timers() {

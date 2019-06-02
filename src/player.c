@@ -16,10 +16,6 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-
 
 #include "player.h"
 #include "timer.h"
@@ -104,5 +100,3 @@ void wound_player(Tplayer *p) {
 	p->wounded = 100;
 	if (p->health <= 0)	kill_player(p);
 }
-
-

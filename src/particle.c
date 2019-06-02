@@ -16,22 +16,16 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-
 
 #include "particle.h"
 
 // pointer to datafile
 DATAFILE *data;
 
-
 // set datafile to use
 void set_datafile(DATAFILE *d) {
 	data = d;
 }
-
 
 // inits variables in a particle
 void set_particle(Tparticle *p, int x, int y, double dx, double dy, int color, int life, int bmp) {
@@ -106,7 +100,6 @@ void update_particle_with_map(Tparticle *p, Tmap *m) {
 	*/
 
 }
-
 
 // creates a little fireworks "bang"
 void create_burst(Tparticle *ps, int x, int y, int spread, int num, int life, int bmp) {

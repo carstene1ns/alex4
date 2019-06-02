@@ -16,11 +16,9 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
 
 #include <string.h>
+
 #include "allegro.h"
 #include "hisc.h"
 
@@ -48,7 +46,6 @@ int qualify_hisc_table(Thisc *table, Thisc post) {
 	}
 	return 0;
 }
-
  
 // sorts the table
 void sort_hisc_table(Thisc *table) {
@@ -97,7 +94,6 @@ void reset_hisc_table(Thisc *table, const char *name, int hi, int lo) {
 	}
 }
 
-
 // generates a checksum for the entry
 int generate_checksum(Thisc *entry) {
 	int i = entry->score * 37;
@@ -107,7 +103,6 @@ int generate_checksum(Thisc *entry) {
 
 	return i;
 }
-
 
 // loads table from disk, returns 1 on success
 int load_hisc_table(Thisc *table, PACKFILE *fp) {
@@ -131,7 +126,6 @@ int load_hisc_table(Thisc *table, PACKFILE *fp) {
 
 	return ok;
 }
-
 
 // saves table to disk
 void save_hisc_table(Thisc *table, PACKFILE *fp) {
@@ -165,7 +159,3 @@ void draw_hisc_table(Thisc *table, BITMAP *bmp, FONT *fnt, int x, int y, int col
 	for(i=0;i<MAX_SCORES;i++)
 		draw_hisc_post(&table[i], bmp, fnt, x, y + 11 * i, color, show_level);
 }
-
-
-
-

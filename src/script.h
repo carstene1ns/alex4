@@ -16,14 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _SCRIPT_H_
-#define _SCRIPT_H_
 
-#include "allegro.h"
+#ifndef SCRIPT_H
+#define SCRIPT_H
 
+#include <allegro.h>
 
 // struct holding script data
 typedef struct {
@@ -44,11 +41,8 @@ typedef struct {
 // array holding the sounds ids
 int active_sounds[MAX_SCRIPT_SOUNDS];
 
-
 // functions
 int run_script(char *script, DATAFILE *d);
 void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int left, int lines, char **rows, int arrow);
-
-
 
 #endif

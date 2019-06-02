@@ -16,15 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _SHOOTER_H_
-#define _SHOOTER_H_
 
+#ifndef SHOOTER_H
+#define SHOOTER_H
 
 #include "control.h"
-
 
 // space objects
 #define SO_PLAYER			1
@@ -46,8 +42,6 @@
 #define SM_SIN_WAVE		3
 #define SM_COS_WAVE		4
 #define SM_BOSS_1		5
-
-
 
 // any kind of object
 typedef struct {
@@ -116,6 +110,5 @@ typedef struct {
 
 // functions
 int start_shooter(Tcontrol *c, int with_sound);
-
 
 #endif

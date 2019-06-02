@@ -16,10 +16,6 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-
 
 #include "allegro.h"
 #include "control.h"

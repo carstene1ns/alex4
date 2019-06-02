@@ -16,19 +16,15 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _PARTICLE_H_
-#define _PARTICLE_H_
 
-#include "allegro.h"
+#ifndef PARTICLE_H
+#define PARTICLE_H
+
+#include <allegro.h>
 #include "map.h"
-
 
 // maximum number of particles at anytime
 #define MAX_PARTICLES	256
-
 
 // the particle struct
 typedef struct {
@@ -39,7 +35,6 @@ typedef struct {
 	int count;
 	int bmp;
 } Tparticle;
-
 
 // the particles themselves
 Tparticle particle[MAX_PARTICLES];

@@ -16,20 +16,15 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
 
-#ifndef _TOKEN_H_
-#define _TOKEN_H_
-
+#ifndef TOKEN_H
+#define TOKEN_H
 
 // the struct for a token
 typedef struct {
-    char *word;
-    struct Ttoken *next;
+	char *word;
+	struct Ttoken *next;
 } Ttoken;
-
 
 // functions
 Ttoken *create_token(const char *word);
@@ -39,6 +34,5 @@ void insert_token(Ttoken *list, Ttoken *t);
 char *get_next_word(Ttoken *t);
 
 Ttoken *tokenize(char *str);
-
 
 #endif

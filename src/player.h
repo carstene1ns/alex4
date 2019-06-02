@@ -16,14 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _PLAYER_H_
-#define _PLAYER_H_
+
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include "actor.h"
-
 
 // struct for the player
 typedef struct {
@@ -50,7 +47,6 @@ typedef struct {
 	int cherries_taken;
 	int stars_taken;
 } Tplayer;
-
 
 // the player 
 Tplayer player;

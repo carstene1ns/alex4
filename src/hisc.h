@@ -16,13 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _HISC_H_
-#define _HISC_H_
 
-#include "allegro.h"
+#ifndef HISC_H
+#define HISC_H
+
+#include <allegro.h>
 
 // highscore list length
 #define MAX_SCORES      5
@@ -33,7 +31,6 @@ typedef struct {
    unsigned int score;
    unsigned int level;
 } Thisc;
-
 
 // functions
 Thisc* make_hisc_table();

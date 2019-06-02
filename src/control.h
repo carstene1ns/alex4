@@ -16,11 +16,9 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _CONTROL_H_
-#define _CONTROL_H_
+
+#ifndef CONTROL_H
+#define CONTROL_H
 
 #include <stdio.h>
 
@@ -44,7 +42,6 @@ typedef struct {
 
 	unsigned char flags;					// bit field w/ info on which keys that are down
 } Tcontrol;
-
 
 // functions
 void init_control(Tcontrol *c);

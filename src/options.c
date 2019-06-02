@@ -16,13 +16,9 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
 
 #include <stdio.h>
 #include "options.h"
-
 
 // saves the data structure to disk
 void save_options(Toptions *o, PACKFILE *fp) {

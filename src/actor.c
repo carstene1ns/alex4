@@ -16,9 +16,6 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
 
 #include "allegro.h"
 #include "actor.h"
@@ -28,7 +25,6 @@
 #include "bullet.h"
 #include "particle.h"
 #include "main.h"
-
 
 #include "../data/data.h"
 
@@ -62,7 +58,6 @@ void draw_actor(BITMAP *bmp, Tactor *a, int x, int y) {
 			draw_sprite(bmp, a->data[a->flat_frame].dat, x, y - a->h - a->oy);
 	}
 }
-
 
 // animates the actor one tick
 void animate_actor(Tactor *a) {
@@ -221,7 +216,6 @@ void _spike_jump(Tactor *a, Tmap *m) {
 
 }
 
-
 // checks the actor with the tile map
 // this is an ugly function with an if clause
 // for each enemy type
@@ -349,7 +343,7 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 	else if (a->type == MAP_GUARD2) {		// ground pounder
 		/* MODES:
 			0 long wait
-			    if jumped on, mode = 4
+				if jumped on, mode = 4
 			1 get alex pos
 			2 jump
 			3 mode = 0
@@ -486,8 +480,6 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 	if (a->sound != -1) {
 		adjust_sound_id_ex(a->sound, a->x);
 	}
-	
-	
 
 	if (a->y > 160 + (a->type == MAP_GUARD2 || a->type == MAP_GUARD1 ? 600 : 0)) {
 		// change win conditions if needed
@@ -507,10 +499,8 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 	}
 }
 
-
 // puts the actor into dead-mode
 void kill_actor(Tactor *a) {
 	a->status = AC_DEAD;
 	a->dy = -10;
 }
-

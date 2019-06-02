@@ -16,13 +16,12 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _EDIT_H_
-#define _EDIT_H_
+
+#ifndef EDIT_H
+#define EDIT_H
 
 #include <allegro.h>
+
 #include "map.h"
 
 // the editor can be in one of the following modes

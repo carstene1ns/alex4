@@ -17,12 +17,10 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
  
- 
- 
-#ifndef _SCROLLER_H_
-#define _SCROLLER_H_
+#ifndef SCROLLER_H
+#define SCROLLER_H
 
-#include "allegro.h"
+#include <allegro.h>
 
 // maximum lines in a vertical scroller
 #define MAX_LINES_IN_SCROLLER	512			// used for vert-scrolling
@@ -41,14 +39,11 @@ typedef struct {
 	char *lines[MAX_LINES_IN_SCROLLER];
 } Tscroller;
 
-
 // functions
 void init_scroller(Tscroller *sc, FONT *f, char *t, int w, int h, int horiz);
 void draw_scroller(Tscroller *sc, BITMAP *bmp, int x, int y);
 void scroll_scroller(Tscroller *sc, int step);
 int scroller_is_visible(Tscroller *sc);
 void restart_scroller(Tscroller *sc);
-
-
 
 #endif

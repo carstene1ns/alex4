@@ -16,21 +16,16 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <endian.h>
+
 #include "allegro.h"
 #include "map.h"
 #include "timer.h"
 #include "../data/data.h"
-
-
 
 // creates one splendid map 
 Tmap *create_map(int w, int h) {
@@ -107,7 +102,7 @@ static int fwrite_int(const int *src, FILE *fp)
 Tmap *load_map(const char *fname) {
 	Tmap *m;
 	FILE *fp;
-    char header[6];
+	char header[6];
 	
 	// open file
 	fp = fopen(fname, "rb");
@@ -174,13 +169,11 @@ Tmap *load_map(const char *fname) {
 	return m;
 }
 
-
 // loads one splendind map from memory
 Tmap *load_map_from_memory(void *mem) {
 	Tmap *m;
 	unsigned char header[6];
 	unsigned char *c = (unsigned char *)mem;
-
 	
 	// does the header match?
 	//fread(header, 6, 1, fp);
@@ -232,7 +225,6 @@ Tmap *load_map_from_memory(void *mem) {
 	return m;
 }
 
-
 // saves a map to file
 int save_map(Tmap *m, char *fname) {
 	FILE *fp;
@@ -277,7 +269,6 @@ int save_map(Tmap *m, char *fname) {
 	return TRUE;
 }
 
-
 // frees the memory of a map
 void destroy_map(Tmap *m) {
 	if (m == NULL) return;
@@ -289,8 +280,6 @@ void destroy_map(Tmap *m) {
 	// free the map itself
 	free(m);
 }
-
-
 
 // draws a submap to a bitmap
 void draw_map(BITMAP *bmp, Tmap *sm, int dx, int dy, int w, int h, int edit) {
@@ -395,8 +384,6 @@ void draw_map(BITMAP *bmp, Tmap *sm, int dx, int dy, int w, int h, int edit) {
 	
 }
 
-
-
 // gets a pointer to the mappos at tx, ty
 Tmappos *get_mappos(Tmap *m, int tx, int ty) {
 	if (m == NULL) return NULL;
@@ -406,7 +393,6 @@ Tmappos *get_mappos(Tmap *m, int tx, int ty) {
 	return &m->dat[tx + ty * m->width];
 }
 
-
 // copies a part of a map to another part
 void copy_map(Tmap *src, Tmap *dst, int sx, int sy, int dx, int dy, int w, int h) {
 	int x, y;
@@ -414,7 +400,6 @@ void copy_map(Tmap *src, Tmap *dst, int sx, int sy, int dx, int dy, int w, int h
 		for(y=0;y<h;y++)
 			dst->dat[dx + x + (dy + y) * dst->width] = src->dat[sx + x + (sy + y) * src->width];
 }
-
 
 // changes the size of the sub map according to dw and dh
 // dir_flags hold on which sides to shrink and/or expand
@@ -513,7 +498,6 @@ int is_ground(Tmap *sm , int x, int y) {
 	return 0;
 }
 
-
 // returns delta to new y coord
 int adjust_ypos (Tmap *sm, int x, int y, int ground, int dy) {
 	int oy = y;
@@ -521,7 +505,6 @@ int adjust_ypos (Tmap *sm, int x, int y, int ground, int dy) {
 	else		while (!is_ground(sm, x, y)) y += dy;
 	return y - oy;
 }
-
 
 // returns delta to new x coord
 int adjust_xpos (Tmap *sm, int x, int y, int ground, int dx) {

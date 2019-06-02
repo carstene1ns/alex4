@@ -16,18 +16,12 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
 
-
- 
 #include <stdio.h>
 #include <string.h>
 
 #include "allegro.h"
 #include "scroller.h"
-
 
 // initiates a scroller
 // the input text (t) will be messed up if horiz = 0 (vertical scroller)
@@ -59,7 +53,6 @@ void init_scroller(Tscroller *sc, FONT *f, char *t, int w, int h, int horiz) {
 	}
 }
 
-
 // draws the scroller
 void draw_scroller(Tscroller *sc, BITMAP *bmp, int x, int y) {
 	if (sc->horizontal) {
@@ -84,7 +77,6 @@ void draw_scroller(Tscroller *sc, BITMAP *bmp, int x, int y) {
 	}
 }
 
-
 // scrolls the text #step steps
 void scroll_scroller(Tscroller *sc, int step) {
 	sc->offset += step;
@@ -104,7 +96,6 @@ int scroller_is_visible(Tscroller *sc) {
 	return TRUE;
 }
 
-
 // restarts the offset
 void restart_scroller(Tscroller *sc){
 	if (sc->horizontal)
@@ -112,4 +103,3 @@ void restart_scroller(Tscroller *sc){
 	else
 		sc->offset = sc->height;
 }
-

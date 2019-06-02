@@ -16,16 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-
 
 #include "bullet.h"
 #include "particle.h"
 #include "timer.h"
 #include "../data/data.h"
-
 
 // sets values on a bullet
 void set_bullet(Tbullet *b, int x, int y, double dx, double dy, BITMAP *bmp, int bad) {
@@ -61,7 +56,6 @@ void draw_bullet(BITMAP *bmp, Tbullet *b, int ox, int oy) {
 		draw_sprite(bmp, (logic_count & 4 ? b->bmp : b->bmp2), x, y);
 }
 
-
 // updates the bullet one tick
 void update_bullet(Tbullet *b) {
 	b->x += b->dx;
@@ -78,7 +72,6 @@ void reset_bullets(Tbullet *b, int max) {
 	}
 }
 
-
 // returns an unused bullet from an array
 Tbullet *get_free_bullet(Tbullet *b, int max) {
 	int i = 0;
@@ -86,7 +79,6 @@ Tbullet *get_free_bullet(Tbullet *b, int max) {
 	if (i == max) return NULL;
 	return &b[i];
 }
-
 
 // checks a bullet with the map
 void update_bullet_with_map(Tbullet *b, Tmap *m) {
@@ -97,4 +89,3 @@ void update_bullet_with_map(Tbullet *b, Tmap *m) {
 		b->exist = 0;
 	}
 }
-

@@ -42,7 +42,6 @@
 
 #include "../data/data.h"
 
-
 // some game status defines
 #define GS_OK				1
 #define GS_GAMEOVER			2
@@ -56,7 +55,6 @@
 #define GS_EDIT			   10
 
 int game_status = 0;
-
 
 // globalez
 DATAFILE *data = NULL;
@@ -96,7 +94,6 @@ static DUH *duh = NULL;
 #define MOD_GAME_OVER		 0x1c
 #define MOD_LEVEL_SONG		 0x1d
 
-
 // sound fx
 #define MAX_SOUNDS		32
 SAMPLE *sfx[MAX_SOUNDS] = { NULL, NULL, NULL, NULL,
@@ -107,9 +104,6 @@ SAMPLE *sfx[MAX_SOUNDS] = { NULL, NULL, NULL, NULL,
 							NULL, NULL, NULL, NULL,
 							NULL, NULL, NULL, NULL,
 							NULL, NULL, NULL, NULL };
-
-
-
 
 // various
 char scroller_message[] = 
@@ -128,7 +122,6 @@ int playing_original_game = 1;
 int init_ok = 0;
 
 static FILE* log_fp = NULL;
-
 
 // // // // // // // // // // // // // // // // // // // // // 
 
@@ -152,7 +145,6 @@ char *get_init_string() {
 	return init_string;
 }
 
-
 // loggs the text to the text file
 void log2file(const char *format, ...) {
 	va_list ptr; /* get an arg pointer */
@@ -171,7 +163,6 @@ void log2file(const char *format, ...) {
 	}
 
 }
-
 
 // saves a screenshot
 void take_screenshot(BITMAP *bmp) { 
@@ -195,7 +186,6 @@ void take_screenshot(BITMAP *bmp) {
 	destroy_bitmap(b);
 
 }
-
 
 // garbles a string using a key
 void garble_string(char *str, int key) {
@@ -253,7 +243,6 @@ void adjust_sound_id_ex(int id, int x) {
 	}
 }
 
-
 // shows a little message
 void msg_box(const char *str) {
 	if (got_sound) al_pause_duh(dp);
@@ -265,7 +254,6 @@ void msg_box(const char *str) {
 void poll_music() {
 	if (got_sound && dp != NULL) al_poll_duh(dp);
 }
-
 
 // waits for user to strike a key, or x seconds
 void wait_key(int seconds) {
@@ -285,7 +273,6 @@ void wait_key(int seconds) {
 	}
 }
 
-
 // returns the player actor
 Tactor *get_alex() {
 	return &actor[0];
@@ -296,7 +283,6 @@ static void stop_music(void) {
 	al_stop_duh(dp);
 	dp = NULL;
 }
-
 
 // starts the mod at position x
 static void start_music(int startorder) {
@@ -314,7 +300,6 @@ static void start_music(int startorder) {
 	}
 }
 
-
 // delay routine used by the fades
 void fade_rest(int msec, AL_DUH_PLAYER *duh_player) {
 	int i = 0;
@@ -327,7 +312,6 @@ void fade_rest(int msec, AL_DUH_PLAYER *duh_player) {
 			rest(1);
 	}
 }
-
 
 // fades in from white to 4 color palette
 void fade_in_pal(int delay) {
@@ -344,7 +328,6 @@ void fade_in_pal(int delay) {
 	fade_rest(delay, dp);
 }
 
-
 // fades 4 color palette to white
 void fade_out_pal(int delay) {
 	set_color(1, &org_pal[2]);	
@@ -357,8 +340,6 @@ void fade_out_pal(int delay) {
 	set_color(1, &org_pal[4]);	
 	fade_rest(delay, dp);
 }
-
-
 
 // fade in from black to 4 colors pal
 void fade_in_pal_black(int delay, AL_DUH_PLAYER *duh_player) {
@@ -375,7 +356,6 @@ void fade_in_pal_black(int delay, AL_DUH_PLAYER *duh_player) {
 	fade_rest(delay, duh_player);
 }
 
-
 // fades 4 color palette to black
 void fade_out_pal_black(int delay, AL_DUH_PLAYER *duh_player) {
 	set_color(2, &org_pal[1]);	
@@ -388,8 +368,6 @@ void fade_out_pal_black(int delay, AL_DUH_PLAYER *duh_player) {
 	set_color(4, &org_pal[1]);	
 	fade_rest(delay, duh_player);
 }
-
-
 
 // ets all color to white
 void wipe_pal() {
@@ -408,7 +386,6 @@ void clear_trailing_whitespace(char *data) {
 			data[i] = 0;
 	}
 }
-
 
 /// load the level filenames
 void load_level_files(const char *filename) {
@@ -433,13 +410,13 @@ void load_level_files(const char *filename) {
 	}
 
 	// start parsing
-    ret = fgets(buf, 1024, fp);  // read a line
+	ret = fgets(buf, 1024, fp);  // read a line
 	while(ret != NULL && mode == 0) {
 		// read lines until #start# token is found
 		if (!strncmp("#start#", buf, 7)) { 
 			mode = 1;
 		}
-	    ret = fgets(buf, 1024, fp);  // read a line
+		ret = fgets(buf, 1024, fp);  // read a line
 	}
 	if (!mode) {
 		mode = 2;
@@ -480,9 +457,6 @@ void load_level_files(const char *filename) {
 	return;
 }
 
-
-
-
 // blits anything to screen
 void blit_to_screen(BITMAP *bmp) {
 	acquire_screen();
@@ -490,7 +464,6 @@ void blit_to_screen(BITMAP *bmp) {
 	stretch_blit(bmp, screen, 0, 0, bmp->w, bmp->h, 0, 0, SCREEN_W, SCREEN_H);
 	release_screen();
 }
-
 
 // draws the status bar
 void draw_status_bar(BITMAP *bmp, int y) {
@@ -508,7 +481,6 @@ void draw_status_bar(BITMAP *bmp, int y) {
 
 	textprintf_right_ex(bmp, data[THE_FONT].dat, 158, y+1, 4, -1, "%d", player.score);
 }
-
 
 // draws a frame of the action
 void draw_frame(BITMAP *bmp, int _status_bar) {
@@ -565,7 +537,6 @@ void draw_frame(BITMAP *bmp, int _status_bar) {
 	}
 }
 
-
 // loads a sample from disk
 SAMPLE *load_path_sample(const char *fname) {
 	char buf[1024];
@@ -580,14 +551,12 @@ SAMPLE *load_path_sample(const char *fname) {
 	return s;
 }
 
-
 // counts number of maps
 // invoked when loading the map datafile
 void count_maps_callback(DATAFILE *d) {
 	(void) d; /* unused */
 	num_levels ++;
 }
-
 
 // invoked when game looses focus
 void display_switch_out(void) {
@@ -670,7 +639,6 @@ int init_game(const char *map_file) {
 		allegro_message("ALEX4:\nFailed to allocate memory for high score list.");
 		return FALSE;
 	}
-	
 
 	// init gfx
 	if (get_config_int("graphics", "fullscreen", 0)) {
@@ -684,7 +652,7 @@ int init_game(const char *map_file) {
 
 	log2file(" entering gfx mode set in alex4.ini (%dx%d %s)", w, h, (get_config_int("graphics", "fullscreen", 0) ? "full" : "win"));
 
-    if (set_gfx_mode(
+	if (set_gfx_mode(
 		(get_config_int("graphics", "fullscreen", 0) ? GFX_AUTODETECT_FULLSCREEN : GFX_AUTODETECT_WINDOWED),
 		w, h, 0, 0)) {
 		log2file("  *** failed");
@@ -715,7 +683,6 @@ int init_game(const char *map_file) {
 		log2file("  * display switch out failed");
 #endif
 
-
 	// set win title (no! really???)
 	log2file(" setting window title");
 	set_window_title("Alex 4");
@@ -727,14 +694,13 @@ int init_game(const char *map_file) {
 	//dumb_resampling_quality = get_config_int("dumb", "dumb_resampling_quality", 4);
 	//dumb_it_max_to_mix = get_config_int("dumb", "dumb_it_max_to_mix", 128);
 
-
 	// load data
 	log2file(" loading data");
 	packfile_password(init_string);
 	data = load_datafile(DATADIR "data.dat");
 	packfile_password(NULL);
 	if (data == NULL) {
-    	log2file("  *** failed");
+		log2file("  *** failed");
 		allegro_message("ALEX4:\nFailed to load data.");
 		return FALSE;
 	}
@@ -753,7 +719,7 @@ int init_game(const char *map_file) {
 		pack_fclose(pf);
 	}
 	else { 
-	    log2file("  *** failed, resetting to defaults");
+		log2file("  *** failed, resetting to defaults");
 		reset_options(&options);
 	}
 
@@ -772,7 +738,7 @@ int init_game(const char *map_file) {
 		pack_fclose(pf);
 	}
 	else {
-	    log2file("  *** failed, resetting");
+		log2file("  *** failed, resetting");
 		reset_hisc_table(hisc_table, "alex", 25000, 5000);
 		sort_hisc_table(hisc_table);
 		reset_hisc_table(hisc_table_space, "Lola", 3000000, 600000);
@@ -795,7 +761,6 @@ int init_game(const char *map_file) {
 	
 	blit_to_screen(swap_screen);
 
-	
 	// load maps
 	if (playing_original_game) {
 		log2file(" loading original maps");
@@ -804,7 +769,7 @@ int init_game(const char *map_file) {
 		maps = load_datafile_callback(DATADIR "maps.dat", count_maps_callback);
 		packfile_password(NULL);
 		if (maps == NULL) {
-	    	log2file("  *** failed");
+			log2file("  *** failed");
 			allegro_message("ALEX4:\nFailed to load original maps.");
 			return FALSE;
 		}
@@ -830,7 +795,6 @@ int init_game(const char *map_file) {
 		}		
 	}
 
-
 	// install some parts of allegro
 	log2file(" installing keyboard");
 	install_keyboard();
@@ -851,7 +815,7 @@ int init_game(const char *map_file) {
 	// initializing joystick
 	log2file(" initializing joystick/gamepad");
 	if (install_joystick(JOY_TYPE_AUTODETECT)) {
-    	log2file("  *** failed");
+		log2file("  *** failed");
 	}
 	else {
 		ctrl.use_joy = 1;
@@ -859,7 +823,7 @@ int init_game(const char *map_file) {
 
 	// install sound
 	log2file(" installing sound");
-   	set_volume_per_voice(0);
+	set_volume_per_voice(0);
 	switch(get_config_int("sound", "sound_device", 1)) {
 		case 1:
 			i = DIGI_AUTODETECT;
@@ -1081,7 +1045,6 @@ void uninit_game() {
 	allegro_exit();   
 }
 
-
 // inits the player on a map
 void init_player(Tplayer *p, Tmap *m) {
 	actor[0].direction = 1;
@@ -1102,7 +1065,6 @@ void init_player(Tplayer *p, Tmap *m) {
 	p->health = MAX(p->health, 1);
 }
 
-
 // draws text with an outline
 void textout_outline(BITMAP *bmp, const char *txt, int x, int y) {
 	textout_ex(bmp, data[THE_FONT].dat, txt, x+1, y, 1, -1);
@@ -1112,14 +1074,11 @@ void textout_outline(BITMAP *bmp, const char *txt, int x, int y) {
 	textout_ex(bmp, data[THE_FONT].dat, txt, x, y, 4, -1);
 }
 
-
 // draws centered text with an outline
 void textout_outline_center(BITMAP *bmp, const char *txt, int cx, int y) {
 	int x = cx - text_length(data[THE_FONT].dat, txt) / 2;
 	textout_outline(bmp, txt, x, y);
 }
-
-
 
 // plays the let's go sequence
 void show_lets_go() {
@@ -1330,7 +1289,6 @@ void show_cutscene(int level) {
 	// music!
 	if (got_sound) start_music(MOD_LEVEL_DONE);
 
-
 	// create cutscene screene
 	blit(swap_screen, swap2, 0, 0, 0, 0, 160, 120);
 
@@ -1422,7 +1380,6 @@ void show_scores(int space, Thisc *table) {
 		blit(bg, swap_screen, 0, 0, 0, 0, 160, 120);
 	}
 
-
 	textout_outline_center(swap_screen, "High scores", 80, 8);
 	textout_outline_center(swap_screen, "Press any key", 80, 100);
 	draw_hisc_table(table, swap_screen, data[THE_FONT].dat, 10, 30, (space ? 4 : 1), !space);
@@ -1478,10 +1435,8 @@ void draw_select_starting_level(BITMAP *bmp, int level, int min, int max) {
 		}
 	}
 
-
 	destroy_bitmap(stuff);
 }
-
 
 // lets the player select starting level
 int select_starting_level() { 
@@ -1558,8 +1513,6 @@ int select_starting_level() {
 	return start_level;
 }
 
-
-
 // starts a new game
 void new_game(int reset_player_data) {
 	// init player
@@ -1584,7 +1537,6 @@ void new_game(int reset_player_data) {
 	actor[0].anim_max = 4;
 }
 
-
 // tidies up after a map has been used
 void deinit_map(void) {
 	int i;
@@ -1596,9 +1548,6 @@ void deinit_map(void) {
 		}
 	}
 }
-
-
-
 
 // sets up actors and stuff
 void init_map(Tmap *m) {
@@ -1727,7 +1676,6 @@ void init_map(Tmap *m) {
 	}
 }
 
-
 // starts a new level
 // level_id < 0 -> load fname
 // uses datafile map o/w
@@ -1746,7 +1694,7 @@ void new_level(const char *fname, int level_id, int draw) {
 			map = load_map(fname);
 			if (!map) {
 				msg_box("failed to load map!!!");
-    			log2file(" *** failed!");
+				log2file(" *** failed!");
 				return;
 			}
 		}
@@ -1797,9 +1745,6 @@ void new_level(const char *fname, int level_id, int draw) {
 		fade_in_pal(100);
 	}
 }
-
-
-
 
 // updates player movement
 void update_player() {
@@ -2055,8 +2000,6 @@ void update_player() {
 	}
 }
 
-
-
 // checks and acts upone collisions between
 // bullets and enemies
 void check_bullets_with_enemies() {
@@ -2080,7 +2023,6 @@ void check_bullets_with_enemies() {
 	}
 }
 
-
 // checks and acts upon collisions between
 // bullets and alex
 void check_bullets_with_alex() {
@@ -2103,8 +2045,6 @@ void check_bullets_with_alex() {
 		}
 	}
 }
-
-
 
 // checks and acts upon collisions between
 // enemies and alex
@@ -2213,7 +2153,6 @@ void check_alex_with_enemies() {
 	}
 }
 
-
 // calculates camera pos for map m considering player p
 void calculate_camera_pos(Tplayer *p, Tmap *m) {
 	static int camera_type = 1;
@@ -2255,8 +2194,6 @@ void calculate_camera_pos(Tplayer *p, Tmap *m) {
 			d_step = 0;
 			if (++ count > 50) pan = 1; // pan anyway
 		}
-		
-		
 		
 		if (pan) {
 			if (p->actor->direction) tox = MAX(0, MIN(p->actor->x - 60, m->width * 16 - 160));
@@ -2326,7 +2263,6 @@ void calculate_camera_pos(Tplayer *p, Tmap *m) {
 	}
 }
 
-
 // shows the pause menu
 int do_pause_menu(BITMAP *bg) {
 	int done = 0;
@@ -2372,12 +2308,10 @@ int do_pause_menu(BITMAP *bg) {
 	return done;
 }
 
-
 // play the game!
 int play(void) {
 	int i;
 	int playing_go_music = 0;
-
 
 	game_status = GS_OK;
 	cycle_count = 0;
@@ -2517,7 +2451,6 @@ int play(void) {
 	return game_status;
 }
 
-
 // draws the title
 void draw_title(BITMAP *bmp, int tick) {
 	int w, h;
@@ -2555,7 +2488,6 @@ void draw_title(BITMAP *bmp, int tick) {
 	draw_sprite(bmp, data[POINTER].dat, x - 25 + fixtoi(3 * fixcos(itofix(tick << 2))), 44 + menu_choice * step);
 }
 
-
 // switches gfx mode
 void switch_gfx_mode(int mode, int w, int h) {
 	log2file(" switching to %d x %d (%s)", w, h, (mode == GFX_AUTODETECT_WINDOWED ? "w" : "f"));
@@ -2578,31 +2510,28 @@ void switch_gfx_mode(int mode, int w, int h) {
 	set_palette(data[0].dat);
 }
 
-
-
-
 // gets a string from the user
 // used for getting highscore names
 int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int pos_y, int colour, Tcontrol *pad) {
-    int i = 0, c;
-    BITMAP *block = create_bitmap(text_length(f, "w")*max_size + 2, text_height(f) + 2);
+	int i = 0, c;
+	BITMAP *block = create_bitmap(text_length(f, "w")*max_size + 2, text_height(f) + 2);
 	char letters[] = "_abcdefghijklmnopqrstuvwxyz {}";
 	int current_letter = 0;
 	int max_letter = strlen(letters) - 1;
 	int print_delay = 0;
-    
-    if (block == NULL)
-        return 1;
+	
+	if (block == NULL)
+		return 1;
 
 	blit(bmp, block, pos_x - 1, pos_y - 1, 0, 0, block->w, block->h);
 
-    clear_keybuf();
-    while(1) {
+	clear_keybuf();
+	while(1) {
 		cycle_count = 0;
-        string[i] = letters[current_letter];
+		string[i] = letters[current_letter];
 		string[i + 1] = '\0';
-        blit(block, bmp, 0, 0, pos_x - 1, pos_y - 1, block->w, block->h);
-        textout_ex(bmp, f, string, pos_x, pos_y, colour, -1);
+		blit(block, bmp, 0, 0, pos_x - 1, pos_y - 1, block->w, block->h);
+		textout_ex(bmp, f, string, pos_x, pos_y, colour, -1);
 		blit_to_screen(bmp);
 
 		if (pad != NULL) {
@@ -2614,7 +2543,7 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
 		if (keypressed()) {
 			c = readkey();
 			switch((c >> 8)) {
-	            case KEY_BACKSPACE :
+				case KEY_BACKSPACE :
 					i--;
 					i = (i < 0)?0 :i;
 					break;
@@ -2626,7 +2555,7 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
 					break;
 	
 				default :
-	                if (i < max_size - 2 && isprint(c & 0xff)) {
+					if (i < max_size - 2 && isprint(c & 0xff)) {
 						string[i] = c & 0xff;
 						i++;
 						current_letter = 0;
@@ -2661,7 +2590,7 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
 						break;
 
 					default :
-			            if (i < max_size - 2) {
+						if (i < max_size - 2) {
 							string[i] = letters[current_letter];
 							i++;
 						}
@@ -2673,10 +2602,9 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
 
 		while(!cycle_count)
 			rest(1);
-    }
+	}
 }
 
-	
 // lets the player enter a name for highscore use (or what ever)
 void get_player_name(char *name) {
 	blit(data[INTRO_BG].dat, swap_screen, 0, 0, 0, 0, 160, 120);
@@ -2689,7 +2617,6 @@ void get_player_name(char *name) {
 	fade_in_pal(100);
 	get_string(swap_screen, name, 10, data[THE_FONT].dat, 50, 80, 4, &ctrl);
 }
-
 
 // title and menu
 int do_main_menu() {
@@ -3043,9 +2970,6 @@ int do_main_menu() {
 	return status;
 }
 
-
-
-
 // main
 int main(int argc, char **argv) {   
 	int i;
@@ -3120,9 +3044,3 @@ int main(int argc, char **argv) {
 
 	return 0;
 } END_OF_MAIN() 
-
-
-
-
-
-

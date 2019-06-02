@@ -16,9 +16,7 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
+
 #include <stdio.h>
 #include <string.h>
 #include "allegro.h"
@@ -27,12 +25,10 @@
 #include "token.h"
 #include "main.h"
 
-
 #include "../data/data.h"
 
 // silly value 
 #define		NO_CHANGE	-3249587
-
 
 // datafile to use
 DATAFILE *data;
@@ -43,8 +39,6 @@ BITMAP *swap_buffer;
 int script_done = 0;
 // any objects
 Tscript_object *objects = NULL;
-
-
 
 // shows a speak bulb 
 void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int left, int lines, char **rows, int arrow) {
@@ -93,7 +87,6 @@ void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int
 	}
 }
 
-
 // waits for x millis or ESC
 void esc_rest(int millis) {
 	int clicks = millis / 20;
@@ -105,10 +98,8 @@ void esc_rest(int millis) {
 		while(!cycle_count)
 			rest(20);
 	}
-    if (key[KEY_ESC]) script_done = -1;
+	if (key[KEY_ESC]) script_done = -1;
 }
-
-
 
 // object handling
 
@@ -275,11 +266,7 @@ void delete_all_objects() {
 	objects = NULL;
 }
 
-
 // end object handling
-
-
-
 
 // script commands
 // used by the script interpretor to launch various events
@@ -300,7 +287,6 @@ void cmd_savebmp() {
 	blit(swap_buffer, buffer, 0, 0, 0, 0, 160, 120);
 }
 
-
 void cmd_loadmap(char *fname) {
 	new_game(0);
 	new_level(fname, -2, 0);
@@ -315,7 +301,7 @@ void cmd_fadein() {
 }
 
 void cmd_fadeout() {
-    fade_out_pal(100);
+	fade_out_pal(100);
 }
 
 void cmd_speak(Ttoken *t, int arrow) {
@@ -343,7 +329,6 @@ void cmd_speak(Ttoken *t, int arrow) {
 	draw_speak_bulb(swap_buffer, data, sx, sy, up, left, lines, rows, arrow);
 }
 
-
 int remember_sound(int id) {
 	int i = 0;
 	while(active_sounds[i] != -1 && i < MAX_SCRIPT_SOUNDS) i ++;
@@ -352,7 +337,6 @@ int remember_sound(int id) {
 	active_sounds[i] = id;
 	return 1;
 }
-
 
 void forget_sound(int id) {
 	int i;
@@ -363,7 +347,6 @@ void forget_sound(int id) {
 		}
 	}
 }
-
 
 void cmd_play_sample(Ttoken *t) {
 	int vol = 100;
@@ -392,7 +375,6 @@ void cmd_play_sample(Ttoken *t) {
 	}
 }
 
-
 void cmd_stop_sample(Ttoken *t) {
 	if (t != NULL) {
 		int id = atoi(t->word);
@@ -401,14 +383,12 @@ void cmd_stop_sample(Ttoken *t) {
 	}
 }
 
-
-
 void cmd_blit() {
 	blit_to_screen(swap_buffer);
 }
 
 void cmd_wait(int msec) {
-    esc_rest(msec);
+	esc_rest(msec);
 }
 
 void cmd_end() {
@@ -555,9 +535,7 @@ void cmd_run(Ttoken *t) {
 	
 }
 
-
 // end commands
-
 
 // helper to get a line from a string
 char *get_line(char *dst, char *src) {
@@ -574,12 +552,11 @@ char *get_line(char *dst, char *src) {
 	return src;
 }
 
-
 // runs a script
 // returns -1 is esc was pressed, 0 o/w
 int run_script(char *script, DATAFILE *d) {
-    char buf[512];
-    Ttoken *token;
+	char buf[512];
+	Ttoken *token;
 	int i;
 
 	// set datafile
@@ -591,13 +568,13 @@ int run_script(char *script, DATAFILE *d) {
 	for(i = 0; i < MAX_SCRIPT_SOUNDS; i ++) active_sounds[i] = -1;
 
 	// create gfx buffers
-    swap_buffer = create_bitmap(160, 120);
+	swap_buffer = create_bitmap(160, 120);
 	buffer = create_bitmap(160, 120);
 
-    script_done = FALSE;
-    
-    while(!script_done) {
-      
+	script_done = FALSE;
+	
+	while(!script_done) {
+	  
 		// get commands from script string
 		script = get_line(buf, script);
 		
@@ -630,7 +607,7 @@ int run_script(char *script, DATAFILE *d) {
 				flush_tokens(token);
 			}
 		}
-    }
+	}
 
 	// destroy buffers
 	delete_all_objects();
@@ -647,6 +624,3 @@ int run_script(char *script, DATAFILE *d) {
 
 	return (script_done == -1 ? -1 : 0);
 }
-
-
-

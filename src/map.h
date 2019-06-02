@@ -16,14 +16,12 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _MAP_H_
-#define _MAP_H_
+
+#ifndef MAP_H
+#define MAP_H
 
 #include <stdio.h>
-#include "allegro.h"
+#include <allegro.h>
 
 // some directions for expanding/shrinking the map
 #define SM_UP		0x01
@@ -89,7 +87,6 @@ typedef struct {
 	int start_y;
 } Tmap;
 
-
 // functions
 Tmap *create_map(int w, int h);
 void destroy_map(Tmap *m);
@@ -108,7 +105,5 @@ int get_tile(Tmap *m, int tx, int ty);
 int is_ground(Tmap *m , int x, int y);
 int adjust_ypos (Tmap *m, int x, int y, int ground, int dy);
 int adjust_xpos (Tmap *m, int x, int y, int ground, int dx);
-
-
 
 #endif

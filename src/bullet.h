@@ -16,13 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _BULLET_H_
-#define _BULLET_H_
 
-#include "allegro.h"
+#ifndef BULLET_H
+#define BULLET_H
+
+#include <allegro.h>
 #include "map.h"
 #include "particle.h"
 

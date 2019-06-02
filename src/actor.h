@@ -16,13 +16,11 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _ACTOR_H_
-#define _ACTOR_H_
 
-#include "allegro.h"
+#ifndef ACTOR_H
+#define ACTOR_H
+
+#include <allegro.h>
 #include "map.h"
 
 // different modes that an actor can hold
@@ -89,6 +87,5 @@ void draw_actor(BITMAP *bmp, Tactor *a, int x, int y);
 void animate_actor(Tactor *a);
 void update_actor_with_map(Tactor *a, Tmap *m);
 void kill_actor(Tactor *a);
-
 
 #endif

@@ -1,4 +1,24 @@
+/**************************************************************
+ *         _____    __                       _____            *
+ *        /  _  \  |  |    ____  ___  ___   /  |  |           *
+ *       /  /_\  \ |  |  _/ __ \ \  \/  /  /   |  |_          *
+ *      /    |    \|  |__\  ___/  >    <  /    ^   /          *
+ *      \____|__  /|____/ \___  >/__/\_ \ \____   |           *
+ *              \/            \/       \/      |__|           *
+ *                                                            *
+ **************************************************************
+ *    (c) Free Lunch Design 2003                              *
+ *    Written by Johan Peitz                                  *
+ *    http://www.freelunchdesign.com                          *
+ **************************************************************
+ *    This source code is released under the The GNU          *
+ *    General Public License (GPL). Please refer to the       *
+ *    document license.txt in the source directory or         *
+ *    http://www.gnu.org for license information.             *
+ **************************************************************/
+
 #ifdef __unix__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,6 +26,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #if defined(__DECC) && defined(VMS)
 #include <unixlib.h>
 static char *vms_to_unix_buffer = NULL;
@@ -39,6 +60,7 @@ char *get_homedir(void)
 	return pw->pw_dir;
 #endif
 }
+
 //-----------------------------------------------------------------------------
 int check_and_create_dir(const char *name)
 {

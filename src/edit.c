@@ -16,9 +16,7 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
+
 #include <allegro.h>
 #include <stdlib.h>
 #include <string.h>
@@ -122,8 +120,6 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 		line(bmp, mx,   my-4, mx,   my+4, gui_fg_color);
 	}
 }
-
-
 
 // updates the edit mode
 void update_edit_mode(Tmap *map, BITMAP *bmp, int mx, int my, int mb) {
@@ -373,5 +369,3 @@ void update_edit_mode(Tmap *map, BITMAP *bmp, int mx, int my, int mb) {
 		}
 	}
 }
-
-

@@ -16,9 +16,7 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
+
 #include <allegro.h>
 #include <string.h>
 #include <aldumb.h>
@@ -307,13 +305,11 @@ int s_check_pp_collision(BITMAP *spr1, BITMAP *spr2, int x1, int y1, int x2, int
 
 //////////// END PPCOL
 
-
 // stops any mod playing
 static void s_stop_music(void) {
 	al_stop_duh(s_dp);
 	s_dp = NULL;
 }
-
 
 // starts the mod at position x
 static void s_start_music(int startorder) {
@@ -332,10 +328,6 @@ static void s_start_music(int startorder) {
 	}
 }
 
-
-
-
-
 // draws any object at specified position
 void s_draw_object(BITMAP *bmp, Tspace_object *o) {
 	if (o->type != SO_EXPLOSION) {
@@ -353,7 +345,6 @@ void s_draw_object(BITMAP *bmp, Tspace_object *o) {
 	}
 
 }
-
 
 // draws the status bar
 void s_draw_status_bar(BITMAP *bmp, int x, int y) {
@@ -383,7 +374,6 @@ void s_draw_status_bar(BITMAP *bmp, int x, int y) {
 	textprintf_right_ex(bmp, s_data[SPACE_FONT].dat, x + 160, y + 2, 3, -1, "%s", padding_str);
 	if (s_var.score) textprintf_right_ex(bmp, s_data[SPACE_FONT].dat, x + 160, y + 2, 4, -1, "%s", score_str);
 }
-
 
 void s_draw_frame(BITMAP *bmp) {
 	int i;
@@ -424,7 +414,6 @@ void s_draw_frame(BITMAP *bmp) {
 
 }
 
-
 // creates a new random star
 void s_make_random_star(Tspace_star *s) {
 	s->x = rand()%160;
@@ -432,7 +421,6 @@ void s_make_random_star(Tspace_star *s) {
 	s->color = rand()%2 + 2;
 	s->dx = (s->color == 2 ? - 2 : -3); 
 }
-
 
 // inits the player
 void s_setup_player() {
@@ -442,7 +430,6 @@ void s_setup_player() {
 	s_player.vy = 0;
 	s_player.alive = 1;
 }
-
 
 // returns a free object from an array
 Tspace_object *s_get_free_object(Tspace_object *array, int max) {
@@ -457,7 +444,6 @@ Tspace_object *s_get_free_object(Tspace_object *array, int max) {
 
 	return &array[i];
 }
-
 
 // creates an enemy bullet
 Tspace_object *s_make_enemy_bullet(int x, int y, double vx, double vy) {
@@ -634,8 +620,6 @@ Tspace_object *s_make_explosion(int x, int y) {
 	return o;
 }
 
-
-
 // creates an enemy
 Tspace_object *s_make_enemy(int type, int y) {
 	Tspace_object *o;
@@ -749,7 +733,6 @@ Tspace_object *s_make_enemy(int type, int y) {
 	return o;
 }
 
-
 // creates a wave of an event
 void s_make_enemy_wave(Tshooter_event *e) {
 	int i;
@@ -804,7 +787,6 @@ void s_make_enemy_wave(Tshooter_event *e) {
 	}
 }
 
-
 // kills the player
 void s_kill_player() {
 	s_player.alive = 0;
@@ -815,7 +797,6 @@ void s_kill_player() {
 	play_sound_id_ex(SMPL_SHOOT, 100, 600, 0);
 	//play_sound_id(SMPL_A_DIE);
 }
-
 
 // collision checking (and acting upon collision)
 // projectile goes in b, object in a
@@ -923,7 +904,6 @@ void s_check_collision(Tspace_object *array_a, int num_a, Tspace_object *array_b
 	}
 }
 
-
 // creates a player bullet
 Tspace_object *s_make_player_bullet(int type) {
 	Tspace_object *bullet;
@@ -991,7 +971,6 @@ Tspace_object *s_make_player_bullet(int type) {
 	}
 	return bullet;
 }
-
 
 // updats the player object
 void s_update_player() {
@@ -1064,7 +1043,6 @@ void s_update_player() {
 	s_player.vy *= 0.8;
 }
 
-
 // resets AL objects
 void s_reset_all_objects() {
 	int i;
@@ -1094,7 +1072,6 @@ void s_activate_sign(int game_over, double vy) {
 	s_sign.vx = 0;
 	s_sign.vy = vy;
 }
-
 
 // the player can enter his/hers name
 void s_get_player_name(char *name) {
@@ -1126,7 +1103,6 @@ void s_run_shooter() {
 	s_draw_frame(s_buffer);
 	blit_to_screen(s_buffer);
 	fade_in_pal(100);
-
 
 	// Go!
 	cycle_count = 0;
@@ -1490,7 +1466,6 @@ void s_uninit_shooter() {
 
 	unload_duh(s_duh);
 }
-
 
 // starts the shooter
 int start_shooter(Tcontrol *c, int with_sound) {

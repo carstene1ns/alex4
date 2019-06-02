@@ -16,14 +16,13 @@
  *    document license.txt in the source directory or         *
  *    http://www.gnu.org for license information.             *
  **************************************************************/
- 
- 
- 
-#ifndef _MAIN_H_
-#define _MAIN_H_
 
-#include "allegro.h"
-#include "aldumb.h"
+#ifndef MAIN_H
+#define MAIN_H
+
+#include <allegro.h>
+#include <aldumb.h>
+
 #include "map.h"
 #include "hisc.h"
 #include "actor.h"
@@ -59,7 +58,6 @@
 #define		SMPL_TALK		24
 #define		SMPL_BEAM		25
 
-
 // functions
 char *get_init_string();
 void textout_outline_center(BITMAP *bmp, const char *txt, int cx, int y);
@@ -88,10 +86,12 @@ Thisc *get_space_hisc();
 void show_scores(int space, Thisc *table);
 void poll_music();
 
-
 // a little bounding box quickie
-#define check_bb_collision(x1,y1,w1,h1,x2,y2,w2,h2) (!( ((x1)>=(x2)+(w2)) || ((x2)>=(x1)+(w1)) || \
-                                                        ((y1)>=(y2)+(h2)) || ((y2)>=(y1)+(h1)) ))
+#define check_bb_collision(x1,y1,w1,h1,x2,y2,w2,h2) \
+                           (!( ((x1)>=(x2)+(w2)) \
+                            || ((x2)>=(x1)+(w1)) \
+                            || ((y1)>=(y2)+(h2)) \
+                            || ((y2)>=(y1)+(h1)) ))
 
 #ifndef DATADIR
 #define DATADIR "data/"
