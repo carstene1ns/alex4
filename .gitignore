@@ -1,6 +1,6 @@
 alex4
 *.o
-/src/alex4.hi
-/src/alex4.sav
-/src/data
-/src/log.txt
+alex4.hi
+alex4.sav
+log.txt
+allegro.log

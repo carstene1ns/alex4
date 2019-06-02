@@ -431,7 +431,7 @@ void load_level_files(const char *filename) {
 			mode = 2;
 		}
 		else {
-			char full_path_to_map[1024];
+			char full_path_to_map[2048];
 
 			clear_trailing_whitespace(buf);
 			sprintf(full_path_to_map, "%s%s", path, buf);
