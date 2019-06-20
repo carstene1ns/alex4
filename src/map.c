@@ -20,7 +20,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#if defined(__FreeBSD__)
+#include <machine/endian.h>
+#else
 #include <endian.h>
+#endif
 
 #include "allegro.h"
 #include "map.h"

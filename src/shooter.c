@@ -1441,7 +1441,7 @@ int s_init_shooter() {
 	// lock onto music
 	//s_duh = (DUH *)s_data[SPACEMOD].dat;
 	s_dmbf = dumbfile_open_memory(s_data[SPACEMOD].dat, s_data[SPACEMOD].size);
-	s_duh = dumb_read_mod(s_dmbf, 0);
+	s_duh = dumb_read_mod(s_dmbf);
 
 	// done
 	log2file(" init OK!");

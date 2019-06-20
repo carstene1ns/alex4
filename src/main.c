@@ -871,7 +871,7 @@ int init_game(const char *map_file) {
 		// load music
 		//duh = (DUH *)data[MSC_GAME].dat;
 		dmbf = dumbfile_open_memory(data[MSC_GAME].dat, data[MSC_GAME].size);
-		duh = dumb_read_mod(dmbf, 0);
+		duh = dumb_read_mod(dmbf);
 		
 		if (get_config_int("sound", "use_sound_datafile", 1)) {
 			log2file(" loading sound datafile");
