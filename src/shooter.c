@@ -48,7 +48,9 @@ Tspace_object s_sign;
 
 // music
 int s_got_sound = 0;
+#ifdef ALEX_NEW_DUMB
 static DUMBFILE *s_dmbf = NULL;
+#endif
 static AL_DUH_PLAYER *s_dp = NULL;
 static DUH_SIGRENDERER *s_sr = NULL;
 static DUH *s_duh = NULL;
@@ -1439,9 +1441,12 @@ int s_init_shooter() {
 
 
 	// lock onto music
-	//s_duh = (DUH *)s_data[SPACEMOD].dat;
+#ifdef ALEX_NEW_DUMB
 	s_dmbf = dumbfile_open_memory(s_data[SPACEMOD].dat, s_data[SPACEMOD].size);
 	s_duh = dumb_read_mod(s_dmbf, 0);
+#else
+	s_duh = (DUH *)s_data[SPACEMOD].dat;
+#endif
 
 	// done
 	log2file(" init OK!");
@@ -1464,7 +1469,11 @@ void s_uninit_shooter() {
 	log2file(" unloading datafile");
 	if (s_data != NULL) unload_datafile(s_data);
 
+#ifdef ALEX_NEW_DUMB
+	log2file(" unloading music");
 	unload_duh(s_duh);
+	dumbfile_close(s_dmbf);
+#endif
 }
 
 // starts the shooter

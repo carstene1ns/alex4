@@ -97,4 +97,9 @@ void poll_music();
 #define DATADIR "data/"
 #endif
 
+// workaround for newer dumb versions
+#if DUMB_VERSION >= 20000
+#define ALEX_NEW_DUMB
+#endif
+
 #endif
