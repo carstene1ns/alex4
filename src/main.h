@@ -29,7 +29,7 @@
 #include "control.h"
 
 // version string
-#define		GAME_VERSION_STR	"v1.2"
+#define		GAME_VERSION_STR	"v1.2.1"
 
 // sample shortcuts
 #define		SMPL_STARTUP	0
