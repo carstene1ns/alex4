@@ -4,7 +4,7 @@ DATADIR = $(PREFIX)/share/$(TARGET)
 
 CFLAGS ?= -g -Wall -O2
 CFLAGS += `allegro-config --cflags`
-LIBS    = -laldmb -ldumb `allegro-config --libs`
+LIBS    = -laldmb -ldumb `allegro-config --libs` -lm
 DEFINES = -DDATADIR=\"$(DATADIR)/\"
 
 OBJS    =  src/main.o \
