@@ -30,8 +30,10 @@
 // silly value 
 #define		NO_CHANGE	-3249587
 
+// array holding the sounds ids
+int active_sounds[MAX_SCRIPT_SOUNDS];
 // datafile to use
-DATAFILE *data;
+extern DATAFILE *data;
 // internal buffers
 BITMAP *buffer;
 BITMAP *swap_buffer;

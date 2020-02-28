@@ -18,7 +18,6 @@
  **************************************************************/
 
 #include <allegro.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "main.h"
@@ -32,7 +31,7 @@ int edit_tile = 0;
 // path to current map
 char edit_path_and_file[1024];
 // datafile to use
-DATAFILE *data;
+extern DATAFILE *data;
 // current edit mode
 int edit_mode;
 
