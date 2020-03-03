@@ -22,6 +22,9 @@
 #include "timer.h"
 #include "../data/data.h"
 
+// the bullets themselves
+Tbullet bullet[MAX_BULLETS];
+
 // sets values on a bullet
 void set_bullet(Tbullet *b, int x, int y, double dx, double dy, BITMAP *bmp, int bad) {
 	b->x = x;

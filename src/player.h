@@ -48,8 +48,8 @@ typedef struct {
 	int stars_taken;
 } Tplayer;
 
-// the player 
-Tplayer player;
+// the player
+extern Tplayer player;
 
 // functions
 void draw_player(BITMAP *bmp, Tplayer *p, int x, int y);

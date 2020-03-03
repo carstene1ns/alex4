@@ -19,8 +19,10 @@
 
 #include "particle.h"
 
+// the particles themselves
+Tparticle particle[MAX_PARTICLES];
 // pointer to datafile
-DATAFILE *data;
+extern DATAFILE *data;
 
 // set datafile to use
 void set_datafile(DATAFILE *d) {

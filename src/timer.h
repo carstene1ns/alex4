@@ -21,12 +21,12 @@
 #define TIMERS_H
 
 // the variables used by the timers
-volatile int frame_count;
-volatile int fps;
-volatile int logic_count;
-volatile int lps;
-volatile int cycle_count;
-volatile int game_count;
+extern volatile int frame_count;
+extern volatile int fps;
+extern volatile int logic_count;
+extern volatile int lps;
+extern volatile int cycle_count;
+extern volatile int game_count;
 
 // functions
 int install_timers();

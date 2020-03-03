@@ -21,6 +21,9 @@
 #include "timer.h"
 #include "../data/data.h"
 
+// the player
+Tplayer player;
+
 // draws the player depending on his state
 void draw_player(BITMAP *bmp, Tplayer *p, int x, int y) {
 	BITMAP *head, *body;

@@ -37,7 +37,7 @@ typedef struct {
 } Tparticle;
 
 // the particles themselves
-Tparticle particle[MAX_PARTICLES];
+extern Tparticle particle[MAX_PARTICLES];
 
 // functions
 void set_datafile(DATAFILE *d);

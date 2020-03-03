@@ -40,7 +40,7 @@ typedef struct {
 #define MAX_BULLETS	64
 
 // the bullets themselves
-Tbullet bullet[MAX_BULLETS];
+extern Tbullet bullet[MAX_BULLETS];
 
 // functions
 void reset_bullets(Tbullet *b, int max);

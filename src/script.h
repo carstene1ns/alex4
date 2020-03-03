@@ -39,7 +39,7 @@ typedef struct {
 // max number of sounds played by the script
 #define MAX_SCRIPT_SOUNDS	16
 // array holding the sounds ids
-int active_sounds[MAX_SCRIPT_SOUNDS];
+extern int active_sounds[MAX_SCRIPT_SOUNDS];
 
 // functions
 int run_script(char *script, DATAFILE *d);

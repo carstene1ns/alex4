@@ -20,6 +20,14 @@
 #include "allegro.h"
 #include "timer.h"
 
+// the variables used by the timers
+volatile int frame_count;
+volatile int fps;
+volatile int logic_count;
+volatile int lps;
+volatile int cycle_count;
+volatile int game_count;
+
 // keeps track of frames each second
 void fps_counter(void) {
 	fps = frame_count;
