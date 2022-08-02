@@ -16,3 +16,4 @@ cmake_install.cmake
 *.zip
 
 .gdb_history
+a4_*.png

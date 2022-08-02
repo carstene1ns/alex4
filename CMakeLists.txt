@@ -2,7 +2,13 @@ cmake_minimum_required(VERSION 3.15)
 
 project("Alex the Allegator 4" VERSION 1.2 LANGUAGES C)
 
-set(C_STANDARD 99)
+set(CMAKE_C_STANDARD 99)
+
+option(WANT_ASAN "build with adress sanitizer" OFF)
+if(WANT_ASAN)
+	add_compile_options(-fno-omit-frame-pointer -fsanitize=address)
+	add_link_options(-fno-omit-frame-pointer -fsanitize=address)
+endif()
 
 # miniz
 

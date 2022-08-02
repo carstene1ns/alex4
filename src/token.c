@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -17,13 +17,14 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#define _XOPEN_SOURCE	700
+#define _XOPEN_SOURCE 700 // for strdup
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "token.h"
 #include "main.h"
+#include "misc.h"
 
 ////////////////////////////////////////////////////////////////
 // token handling

@@ -20,7 +20,8 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 
-#include <allegro.h>
+#include "sdl_wrapper.h"
+#include "data.h"
 #include "map.h"
 
 // different modes that an actor can hold

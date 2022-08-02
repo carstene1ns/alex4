@@ -20,7 +20,7 @@
 #ifndef BULLET_H
 #define BULLET_H
 
-#include <allegro.h>
+#include "sdl_wrapper.h"
 #include "map.h"
 #include "particle.h"
 

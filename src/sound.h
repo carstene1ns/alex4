@@ -17,45 +17,36 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#ifndef CONTROL_H
-#define CONTROL_H
+#ifndef SOUND_H
+#define SOUND_H
 
-#include <stdio.h>
+#include "sdl_port.h"
+#include <SDL_mixer.h>
 
-// flags for each game key
-#define	K_LEFT		0x0001
-#define	K_RIGHT		0x0002
-#define K_UP		0x0004
-#define K_DOWN		0x0008
-#define	K_FIRE		0x0010
-#define	K_JUMP		0x0020
+void play_sound_id(int id);
+void play_sound_id_ex(int id, int vol, int freq, int loop);
+void adjust_sound_id_ex(int id, int player_x, int x);
+void stop_sound_id(int id);
+void start_music(int startorder);
+void stop_music(void);
+void pause_music(bool p);
 
-// struct holding all control data
-typedef struct {
-	int use_joy;
-	int key_left,				// actual keys
-		key_right,
-		key_up,
-		key_down,
-		key_fire,
-		key_jump;
+void load_sfx();
+void free_sfx();
+void load_music(int id);
+void unload_music();
 
-	unsigned char flags;					// bit field w/ info on which keys that are down
-} Tcontrol;
+void set_sound_volume(int vol);
+void set_music_volume(int vol);
 
-// functions
-void init_control(Tcontrol *c);
-void save_control(Tcontrol *c, FILE *fp);
-void load_control(Tcontrol *c, FILE *fp);
-void set_control(Tcontrol *c, int up, int down, int left, int right, int fire, int jump);
-void poll_control(Tcontrol *c);
-int check_control_key(Tcontrol *c, int key);
-int is_up(Tcontrol *c);
-int is_down(Tcontrol *c);
-int is_left(Tcontrol *c);
-int is_right(Tcontrol *c);
-int is_fire(Tcontrol *c);
-int is_jump(Tcontrol *c);
-int is_any(Tcontrol *c);
+// mod start patterns
+#define MOD_INTRO_SONG  0x00
+#define MOD_MENU_SONG   0x08
+#define MOD_BOSS_SONG   0x0c
+#define MOD_OUTRO_SONG  0x11
+#define MOD_PLAYER_DIES 0x1a
+#define MOD_LEVEL_DONE  0x1b
+#define MOD_GAME_OVER   0x1c
+#define MOD_LEVEL_SONG  0x1d
 
 #endif

@@ -20,7 +20,7 @@
 #include "bullet.h"
 #include "particle.h"
 #include "timer.h"
-#include "../data/data.h"
+#include "data.h"
 
 // the bullets themselves
 Tbullet bullet[MAX_BULLETS];

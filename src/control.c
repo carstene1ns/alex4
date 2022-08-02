@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -17,7 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#include "allegro.h"
+#include "sdl_port.h"
 #include "control.h"
 
 // "constructor"
@@ -48,6 +48,8 @@ void set_control(Tcontrol *c, int up, int down, int left, int right, int fire, i
 void poll_control(Tcontrol *c) {
 	c->flags = 0;
 
+#if 0
+	// TODO
 	if (c->use_joy) {
 		poll_joystick();
 		
@@ -58,6 +60,9 @@ void poll_control(Tcontrol *c) {
 		if (joy[0].button[1].b)	c->flags |= K_FIRE;
 		if (joy[0].button[0].b)	c->flags |= K_JUMP;
 	}
+#endif
+
+	update_sdl_keyboard();
 
 	if (key[c->key_up]) c->flags |= K_UP;
 	if (key[c->key_down]) c->flags |= K_DOWN;
@@ -88,7 +93,9 @@ int is_jump(Tcontrol *c)     { return (c->flags & K_JUMP     ? TRUE : FALSE); }
 int is_any(Tcontrol *c)      { return (c->flags              ? TRUE : FALSE); }
 
 // saves the control config to disk using FP
-void save_control(Tcontrol *c, PACKFILE *fp) {
+void save_control(Tcontrol *c, FILE *fp) {
+printf("unused save_control\n");
+#if 0
 	pack_iputl(c->use_joy, fp);
 	pack_iputl(c->key_left, fp);
 	pack_iputl(c->key_right, fp);
@@ -97,10 +104,13 @@ void save_control(Tcontrol *c, PACKFILE *fp) {
 	pack_iputl(c->key_fire, fp);
 	pack_iputl(c->key_jump, fp);
 	pack_putc(c->flags, fp);
+#endif
 }
 
 // loads the control config from disk using FP
-void load_control(Tcontrol *c, PACKFILE *fp) {
+void load_control(Tcontrol *c, FILE *fp) {
+printf("unused load_control\n");
+#if 0
 	c->use_joy = pack_igetl(fp);
 	c->key_left = pack_igetl(fp);
 	c->key_right = pack_igetl(fp);
@@ -109,4 +119,5 @@ void load_control(Tcontrol *c, PACKFILE *fp) {
 	c->key_fire = pack_igetl(fp);
 	c->key_jump = pack_igetl(fp);
 	c->flags = pack_getc(fp);
+#endif
 }

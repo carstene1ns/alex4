@@ -17,45 +17,21 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#ifndef CONTROL_H
-#define CONTROL_H
+#ifndef MISC_H
+#define MISC_H
 
-#include <stdio.h>
+#include "sdl_port.h"
 
-// flags for each game key
-#define	K_LEFT		0x0001
-#define	K_RIGHT		0x0002
-#define K_UP		0x0004
-#define K_DOWN		0x0008
-#define	K_FIRE		0x0010
-#define	K_JUMP		0x0020
+void log2file(const char *format, ...);
+void take_screenshot(BITMAP *bmp);
+void msg_box(const char *str);
+void clear_trailing_whitespace(char *data);
 
-// struct holding all control data
-typedef struct {
-	int use_joy;
-	int key_left,				// actual keys
-		key_right,
-		key_up,
-		key_down,
-		key_fire,
-		key_jump;
-
-	unsigned char flags;					// bit field w/ info on which keys that are down
-} Tcontrol;
-
-// functions
-void init_control(Tcontrol *c);
-void save_control(Tcontrol *c, FILE *fp);
-void load_control(Tcontrol *c, FILE *fp);
-void set_control(Tcontrol *c, int up, int down, int left, int right, int fire, int jump);
-void poll_control(Tcontrol *c);
-int check_control_key(Tcontrol *c, int key);
-int is_up(Tcontrol *c);
-int is_down(Tcontrol *c);
-int is_left(Tcontrol *c);
-int is_right(Tcontrol *c);
-int is_fire(Tcontrol *c);
-int is_jump(Tcontrol *c);
-int is_any(Tcontrol *c);
+// a little bounding box quickie
+#define check_bb_collision(x1,y1,w1,h1,x2,y2,w2,h2) \
+                           (!( ((x1)>=(x2)+(w2)) \
+                            || ((x2)>=(x1)+(w1)) \
+                            || ((y1)>=(y2)+(h2)) \
+                            || ((y2)>=(y1)+(h1)) ))
 
 #endif
