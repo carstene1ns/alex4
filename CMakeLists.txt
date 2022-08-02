@@ -37,8 +37,6 @@ add_executable(alex4
 	src/control.h
 	src/data.c
 	src/data.h
-	#src/edit.c
-	#src/edit.h
 	src/hisc.c
 	src/hisc.h
 	src/map.c
@@ -53,8 +51,6 @@ add_executable(alex4
 	src/script.h
 	src/scroller.c
 	src/scroller.h
-	#src/shooter.c
-	#src/shooter.h
 	src/timer.c
 	src/timer.h
 	src/token.c
@@ -69,13 +65,27 @@ add_executable(alex4
 	src/misc.h
 )
 
+# optional
+
+option(ENABLE_EDITOR "enable map editor (currently broken)" OFF)
+if(ENABLE_EDITOR)
+	target_sources(alex4 PRIVATE src/edit.c src/edit.h)
+	target_compile_definitions(alex4 PRIVATE ENABLE_EDITOR)
+endif()
+
+option(ENABLE_SHOOTER "enable minigame (currently broken)" OFF)
+if(ENABLE_SHOOTER)
+	target_sources(alex4 PRIVATE src/shooter.c src/shooter.h)
+	target_compile_definitions(alex4 PRIVATE ENABLE_SHOOTER)
+endif()
+
 # paths
 
 if(UNIX)
 	include(GNUInstallDirs)
 
 	set(BINDIR ${CMAKE_INSTALL_BINDIR})
-	set(datadir ${CMAKE_INSTALL_DATADIR}/alex4)
+	set(datadir ${CMAKE_INSTALL_FULL_DATADIR}/alex4)
 elseif(WIN32)
 	# put everything in a folder
 	set(BINDIR "dist")
@@ -85,7 +95,7 @@ endif()
 # game data
 
 set(DATADIR ${datadir} CACHE PATH "path where game data is searched")
-target_compile_definitions(alex4 PRIVATE DATADIR=${DATADIR})
+target_compile_definitions(alex4 PRIVATE DATADIR="${DATADIR}")
 
 function(create_zip output_file input_files working_dir)
 	add_custom_command(
@@ -115,6 +125,15 @@ set(zip_files
 	${CMAKE_CURRENT_BINARY_DIR}/maps.zip
 	${CMAKE_CURRENT_BINARY_DIR}/sfx_22.zip
 )
+
+if(ENABLE_SHOOTER)
+	set(_shooter ${CMAKE_CURRENT_SOURCE_DIR}/shooter)
+	file(GLOB SHOOTERFILES CONFIGURE_DEPENDS ${_shooter}/*)
+	create_zip(${CMAKE_CURRENT_BINARY_DIR}/shooter.zip "${SHOOTERFILES}" ${_shooter})
+	unset(_shooter)
+	list(APPEND zip_files ${CMAKE_CURRENT_BINARY_DIR}/shooter.zip)
+endif()
+
 add_custom_target(alex4-data ALL DEPENDS ${zip_files})
 
 # libs
