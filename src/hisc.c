@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -18,8 +18,7 @@
  **************************************************************/
 
 #include <string.h>
-
-#include "allegro.h"
+#include "sdl_port.h"
 #include "hisc.h"
 
 // creates a table to work with
@@ -105,57 +104,61 @@ int generate_checksum(Thisc *entry) {
 }
 
 // loads table from disk, returns 1 on success
-int load_hisc_table(Thisc *table, PACKFILE *fp) {
+bool load_hisc_table(Thisc *table, const char *filename) {
 	int i;
-	int ok = 1;
+	bool ok = true;
+	SDL_RWops* rw = SDL_RWFromFile(filename, "rb");
 
 	for(i=0; i<MAX_SCORES; i++) {
 		int c_disk, c_real;
 		// load entry
-		pack_fread(&table[i].name, sizeof(table[i].name), fp);
-		pack_getc(fp); pack_getc(fp); // 2 bytes padding
-		table[i].score = pack_igetl(fp);
-		table[i].level = pack_igetl(fp);
+		SDL_RWread(rw, &table[i].name, sizeof(table[i].name), 1);
+		SDL_ReadLE16(rw); // 2 bytes padding
+		table[i].score = SDL_ReadLE32(rw);
+		table[i].level = SDL_ReadLE32(rw);
 		// load checksum
-		c_disk = pack_igetl(fp);
+		c_disk = SDL_ReadLE32(rw);
 		// generate check sum
 		c_real = generate_checksum(&table[i]);
 		// compare checksums
-		if (c_real != c_disk) ok = 0; // tampered with
+		if (c_real != c_disk) ok = false; // tampered with
 	}
+	SDL_RWclose(rw);
 
 	return ok;
 }
 
 // saves table to disk
-void save_hisc_table(Thisc *table, PACKFILE *fp) {
+void save_hisc_table(Thisc *table, const char *filename) {
 	int i;
+	SDL_RWops* rw = SDL_RWFromFile(filename, "wb");
 
 	for(i=0; i<MAX_SCORES; i++) {
 		int checksum;
 		// save entry
-		pack_fwrite(&table[i].name, sizeof(table[i].name), fp);
-		pack_putc(0, fp); pack_putc(0, fp); // 2 bytes padding
-		pack_iputl(table[i].score, fp);
-		pack_iputl(table[i].level, fp);
+		SDL_RWwrite(rw, &table[i].name, sizeof(table[i].name), 1);
+		SDL_WriteLE16(rw, 0); // 2 bytes padding
+		SDL_WriteLE32(rw, table[i].score);
+		SDL_WriteLE32(rw, table[i].level);
 		// generate check sum
 		checksum = generate_checksum(&table[i]);
 		// save checksum
-		pack_iputl(checksum, fp);
+		SDL_WriteLE32(rw, checksum);
 	}
+	SDL_RWclose(rw);
 }
 
 // draws a single hisc post
-void draw_hisc_post(Thisc *table, BITMAP *bmp, FONT *fnt, int x, int y, int color, int show_level) {
-	textprintf_ex(bmp, fnt, x, y, color, -1, "%s", table->name);
-	if (show_level) textprintf_right_ex(bmp, fnt, x+80, y, color, -1, "%2d", table->level);
-	textprintf_right_ex(bmp, fnt, x+140, y, color, -1, "%d", table->score);
+void draw_hisc_post(Thisc *table, BITMAP *bmp, int x, int y, int color, int show_level) {
+	textprintf_ex(bmp, x, y, color, -1, "%s", table->name);
+	if (show_level) textprintf_right_ex(bmp, x+80, y, color, -1, "%2d", table->level);
+	textprintf_right_ex(bmp, x+140, y, color, -1, "%d", table->score);
 }
 
 // draws the entire table
-void draw_hisc_table(Thisc *table, BITMAP *bmp, FONT *fnt, int x, int y, int color, int show_level) {
+void draw_hisc_table(Thisc *table, BITMAP *bmp, int x, int y, int color, int show_level) {
 	int i;
 
 	for(i=0;i<MAX_SCORES;i++)
-		draw_hisc_post(&table[i], bmp, fnt, x, y + 11 * i, color, show_level);
+		draw_hisc_post(&table[i], bmp, x, y + 11 * i, color, show_level);
 }

@@ -20,7 +20,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include <allegro.h>
+#include "sdl_wrapper.h"
 
 // number of levels to count cherries/stars on
 #define MAX_LEVELS		64
@@ -35,8 +35,8 @@ typedef struct {
 } Toptions;
 
 // functions
-void save_options(Toptions *o, PACKFILE *fp);
-void load_options(Toptions *o, PACKFILE *fp);
+void save_options(Toptions *o, FILE *fp);
+void load_options(Toptions *o, FILE *fp);
 void reset_options(Toptions *o);
 
 #endif
