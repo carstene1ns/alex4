@@ -1,0 +1,251 @@
+####################
+#
+# alex 4
+# outro script
+#
+####################
+
+# scene 1 - jungle
+# * alex talks to lola
+#######################################
+# load_map data/maps/outro.map
+load_map 1
+
+# set up initial scene
+#######################################
+draw_map
+save_buffer
+
+set ship0 160 64 left
+set drumcan1 112 16 left
+set drumcan2 112 32 left
+
+set ufo0 11 -30 right
+set beam 40 -120 right
+
+set alex 48 64 right
+set lola 144 32 left
+
+set ufo1 39 -14 right
+
+run 1
+fade_in
+
+
+# alex talk to lola
+# lola crushes cans
+# more talking
+#######################################
+run 10
+
+# talk
+speak 60 60 left 2 "Lola! Are" "you ok?"
+blit
+wait 2000
+
+# lola starts rolling
+delete lola
+set ball 144 32 rotate
+move ball -2 0 
+run 10
+
+# drumcans fly
+play_sample 8 100 1000 0
+move drumcan1 -2 -1
+move drumcan2 -1 -2
+
+run 16
+
+# back to normal
+delete ball
+set lola 94 32 left
+move lola -1 2
+
+run 16
+
+# stop action
+move lola 0 0
+move drumcan1 0 0
+move drumcan2 0 0
+
+save_buffer
+
+# talk
+show_bmp buffer
+speak 80 50 right 2 "I'm fine. You came" "just in time!"
+blit
+wait 2000
+
+# talk
+show_bmp buffer
+speak 60 60 left 2 "I'm so happy" "to see you!"
+blit
+wait 2000
+
+# talk
+show_bmp buffer
+speak 80 50 right 2 "Thank you for" "saving me."
+blit
+wait 2000
+
+play_sample 21 50 1000 1
+
+# talk
+show_bmp buffer
+speak 60 60 left 2 "Wait, what's" "that sound?"
+blit
+wait 2000
+
+draw_map
+save_buffer
+
+# enter ufo 
+# grab alex
+# leave
+#######################################
+
+stop_sample 21
+play_sample 21 100 1000 1
+
+move ufo0 0 1
+move ufo1 0 1
+move beam 0 1
+
+run 30
+
+move ufo0 0 0
+move ufo1 0 0
+move beam 0 0
+
+run 50
+
+play_sample 25 100 1000 1
+move beam 0 1
+
+run 90
+
+# talk
+speak 80 50 right 1 "Alex!"
+blit
+wait 1000
+
+move beam 0 0
+
+# talk
+speak 60 60 left 1 "Lola!"
+blit
+wait 1000
+
+move beam 0 -1
+move alex 0 -1
+
+run 100
+
+stop_sample 25
+
+move ufo0 0 -1
+move ufo1 0 -1
+
+stop_sample 21
+play_sample 21 50 1000 1
+
+run 30
+
+move ufo0 0 0
+move ufo1 0 0
+move beam 0 0
+move alex 0 0
+
+stop_sample 21
+
+# talk
+speak 80 50 right 1 "I'll save you!"
+blit
+wait 1000
+
+# ship enters
+play_sample 23 100 1000 0
+set ship0 160 64 left
+move ship0 -2 0 
+run 43
+move ship0 0 0
+
+# talk
+speak 80 50 right 1 "Yay!"
+blit
+wait 500
+
+
+# lola enters ship
+set ship1 74 64 left
+delete ship0
+delete lola
+run 50
+
+# ship leaves
+play_sample 23 100 1000 0
+move ship1 -1 0
+run 16
+move ship1 -2 -1
+run 8
+move ship1 -2 -2
+run 8
+move ship1 -2 -3
+run 50
+
+
+# clear up
+delete alex
+delete ufo1
+delete ufo0
+delete beam
+delete drumcan1
+delete drumcan2
+delete ship1
+fade_out
+
+
+
+# scene: treetops
+# ufo leaves
+# lola in ship follows
+#######################################
+
+show_bmp treetops
+save_buffer
+blit
+play_sample 21 100 1000 1
+fade_in
+
+set ufo -32 120 left
+move ufo 1 -1
+
+run 150
+
+play_sample 23 100 600 0
+set ship1 -32 80 right
+move ship1 2 -1
+
+run 100
+stop_sample 21 
+
+# talk
+text 80 60 left 1 " The end  "
+blit
+wait 1000
+text 80 60 left 1 " The end? "
+blit
+wait 500
+
+
+
+# tidy up
+delete ship1
+delete ufo
+fade_out
+
+
+
+# finish
+###################################################
+end_script

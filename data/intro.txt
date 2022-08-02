@@ -1,0 +1,213 @@
+####################
+#
+# alex 4
+# intro script
+#
+####################
+
+# scene 1 - jungle
+# * alex talks to lola
+#######################################
+# load_map data/maps/intro.map
+load_map 0
+
+# set up initial scene
+draw_map
+save_buffer
+set alex 48 64 right
+set lola 80 64 left
+run 1
+save_buffer
+fade_in
+
+# talk 
+speak 80 60 right 4 "Hey, did you" "hear about" "those kidnapped" "animals?"
+blit
+wait 4000
+
+# talk 
+show_bmp buffer
+speak 60 60 left 3 "Yeah, terrible." "I bet it's those" "humans again."
+blit
+wait 3000
+
+# talk 
+play_sample 22 20 1000 1
+show_bmp buffer
+speak 80 60 right 3 "Probably... Wait!" "What's that sound?" "It sounds like..."
+blit
+wait 3000
+stop_sample 22
+play_sample 22 50 1000 1
+
+show_bmp buffer
+blit
+
+# clear up
+delete alex
+delete lola
+fade_out
+stop_sample 22
+
+
+
+# scene 2 - treetops
+# * helicopter enters
+# * lowers cage
+#######################################
+# setup initial scene
+show_bmp treetops
+save_buffer
+blit
+play_sample 22 80 1000 1
+fade_in
+
+# enter chopper
+set helicopter 160 30 left
+move helicopter -1 0 
+set cage1 189 50 left
+move cage1 -1 0
+set line cage1 6 0 helicopter 35 10
+run 100
+
+# talk
+speak 60 40 upright 2 "Look," "allegators!"
+blit
+wait 2000
+
+# lower cage
+show_bmp buffer
+move helicopter 0 0
+move cage1 0 2
+run 35
+
+# clean up
+fade_out
+stop_sample 22
+delete line
+delete cage1
+delete helicopter
+
+
+# scene 3 - jungle
+# * cage is dropped on lola
+# * cage rises
+# * alex tries to save lola
+#######################################
+# set up initial scene
+draw_map
+save_buffer
+set chain 86 -135 left
+set cage2 80 -38 left
+set alex 48 64 right
+set lola 80 64 left
+run 1
+play_sample 22 50 1000 1
+fade_in
+
+# lower cage
+move cage2 0 4
+move chain 0 4
+run 24
+play_sample 19 100 1000 0
+
+# talk
+speak 80 50 right 1 "Alex!"
+blit 
+wait 1000
+
+# talk
+speak 60 60 left 1 "Nooooo!"
+blit 
+wait 1000
+
+# raise cage & lola
+move cage2 0 -2
+move chain 0 -2
+move lola 0 -2
+run 48
+
+# clean up
+fade_out
+stop_sample 22
+delete cage2
+delete chain
+delete lola
+delete alex
+
+
+
+# scene 4 - treetops
+# * cage reaches chopper
+# * chopper leaves
+#######################################
+# setup initial scene
+show_bmp treetops
+save_buffer
+set helicopter 60 30 left
+set cage3 89 122 left
+set line cage3 6 0 helicopter 35 10
+run 2
+play_sample 22 80 1000 1
+fade_in
+
+# raise cage
+move cage3 0 -1
+run 60
+
+# talk
+speak 80 30 right 1 "*har har har*"
+blit 
+wait 1000
+
+# chopper leaves
+move cage3 -1 0
+move helicopter -1 0
+run 130
+
+# clean up
+fade_out
+stop_sample 22
+delete helicopter
+delete cage3
+delete line
+
+
+# scene 5 - darkness
+# * alex asks for help
+#######################################
+# setup initial scene
+show_bmp darkness
+save_buffer
+set alex 100 82 left
+run 1
+save_buffer
+fade_in
+
+# talk
+speak 100 80 right 2 "Please! You must" "help me find Lola!"
+blit 
+wait 750
+play_sample 24 100 1000 0
+wait 2250
+
+# talk
+show_bmp darkness
+save_buffer
+set alex 100 82 left
+run 1
+save_buffer
+speak 100 80 right 3 "Let's go before they" "make a pair of" "shoes out of her!"
+blit 
+wait 750
+play_sample 24 100 1000 0
+wait 3250
+
+# clean up
+fade_out
+delete alex
+
+
+# finish
+###################################################
+end_script
