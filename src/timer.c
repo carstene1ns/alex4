@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -17,7 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#include "allegro.h"
+#include "sdl_port.h"
 #include "timer.h"
 
 // the variables used by the timers
@@ -29,38 +29,34 @@ volatile int cycle_count;
 volatile int game_count;
 
 // keeps track of frames each second
-void fps_counter(void) {
+Uint32 fps_counter(Uint32 interval, void *param) {
 	fps = frame_count;
 	frame_count = 0;
 	lps = logic_count;
 	logic_count = 0;
+
+	return interval;
 }
-END_OF_FUNCTION(fps_counter)
 
 // keeps track of internal game speed
-void cycle_counter(void) {
+Uint32 cycle_counter(Uint32 interval, void *param) {
 	cycle_count++;
 	game_count++;
+
+	return interval;
 }
-END_OF_FUNCTION(game_counter)
 
 // initiates the timers
 int install_timers() {
-	install_timer();
-	LOCK_VARIABLE(cycle_count);
-	LOCK_VARIABLE(logic_count);
-	LOCK_VARIABLE(lps);
-	LOCK_VARIABLE(fps);
-	LOCK_VARIABLE(frame_count);
-	LOCK_FUNCTION(fps_counter);
-	install_int(fps_counter, 1000);
+	SDL_InitSubSystem(SDL_INIT_TIMER);
+
+	SDL_AddTimer(1000, fps_counter, NULL);
 	fps = 0;
 	frame_count = 0;
 	cycle_count = 0;
-	LOCK_FUNCTION(cycle_counter);
-	install_int(cycle_counter, 20);
+	SDL_AddTimer(20, cycle_counter, NULL);
 
 	game_count ++;
 
-	return TRUE;
+	return true;
 }
