@@ -126,39 +126,57 @@ function(create_zip output_file input_files working_dir)
 	)
 endfunction()
 
-set(_data ${CMAKE_CURRENT_SOURCE_DIR}/data)
-set(_maps ${CMAKE_CURRENT_SOURCE_DIR}/maps)
-set(_sfx ${CMAKE_CURRENT_SOURCE_DIR}/sfx_22)
-file(GLOB DATAFILES CONFIGURE_DEPENDS ${_data}/*)
-file(GLOB MAPFILES CONFIGURE_DEPENDS ${_maps}/*)
-file(GLOB SFXFILES CONFIGURE_DEPENDS ${_sfx}/*)
-create_zip(${CMAKE_CURRENT_BINARY_DIR}/data.zip "${DATAFILES}" ${_data})
-create_zip(${CMAKE_CURRENT_BINARY_DIR}/maps.zip "${MAPFILES}" ${_maps})
-create_zip(${CMAKE_CURRENT_BINARY_DIR}/sfx_22.zip "${SFXFILES}" ${_sfx})
-unset(_data)
-unset(_maps)
-unset(_sfx)
-
-set(zip_files
-	${CMAKE_CURRENT_BINARY_DIR}/data.zip
-	${CMAKE_CURRENT_BINARY_DIR}/maps.zip
-	${CMAKE_CURRENT_BINARY_DIR}/sfx_22.zip
+file(GLOB DATAFILES CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/data/font/*
+	${CMAKE_CURRENT_SOURCE_DIR}/data/images/*
+	${CMAKE_CURRENT_SOURCE_DIR}/data/maps/*
+	${CMAKE_CURRENT_SOURCE_DIR}/data/music/*
+	${CMAKE_CURRENT_SOURCE_DIR}/data/scripts/*
+	${CMAKE_CURRENT_SOURCE_DIR}/data/sfx_22/*
 )
+create_zip(${CMAKE_CURRENT_BINARY_DIR}/data.zip "${DATAFILES}"
+	${CMAKE_CURRENT_SOURCE_DIR}/data
+)
+set(zip_files ${CMAKE_CURRENT_BINARY_DIR}/data.zip)
 
 if(ENABLE_SHOOTER)
-	set(_shooter ${CMAKE_CURRENT_SOURCE_DIR}/shooter)
-	file(GLOB SHOOTERFILES CONFIGURE_DEPENDS ${_shooter}/*)
-	create_zip(${CMAKE_CURRENT_BINARY_DIR}/shooter.zip "${SHOOTERFILES}" ${_shooter})
-	unset(_shooter)
+	file(GLOB_RECURSE SHOOTERFILES
+		LIST_DIRECTORIES false
+		CONFIGURE_DEPENDS
+		${CMAKE_CURRENT_SOURCE_DIR}/shooter/*
+	)
+	create_zip(${CMAKE_CURRENT_BINARY_DIR}/shooter.zip "${SHOOTERFILES}"
+		${CMAKE_CURRENT_SOURCE_DIR}/shooter
+	)
 	list(APPEND zip_files ${CMAKE_CURRENT_BINARY_DIR}/shooter.zip)
 endif()
 
 add_custom_target(alex4-data ALL DEPENDS ${zip_files})
 
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_FOUND)
+	add_custom_command(
+		COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/data/make_header.py
+			${CMAKE_CURRENT_SOURCE_DIR}/data ${CMAKE_CURRENT_BINARY_DIR}/data_files.h
+		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/data_files.h
+		DEPENDS ${zip_files} data/make_header.py
+		COMMENT "(Re-)generating datafile header."
+	)
+	target_include_directories(alex4 PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+	target_sources(alex4 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/data_files.h)
+else()
+	message(STATUS "Using pre-generated datafile header.")
+	target_include_directories(alex4 data)
+	target_sources(alex4 PRIVATE data/data_files.h)
+endif()
+
 # libs
 
-find_package(SDL2 REQUIRED VERBOSE)
-find_package(SDL2_mixer REQUIRED VERBOSE)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_mixer REQUIRED)
+if(SDL2_FOUND AND SDL2_mixer_FOUND)
+	message(STATUS "Using SDL2 ${SDL2_VERSION} and SDL2_mixer ${SDL2_mixer_VERSION}.")
+endif()
 
 target_link_libraries(alex4 miniz iniparser SDL2::SDL2 SDL2_mixer::SDL2_mixer)
 
