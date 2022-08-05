@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -20,7 +20,7 @@
 #ifndef SCROLLER_H
 #define SCROLLER_H
 
-#include <allegro.h>
+#include "sdl_port.h"
 
 // maximum lines in a vertical scroller
 #define MAX_LINES_IN_SCROLLER	512			// used for vert-scrolling
@@ -30,7 +30,6 @@
 typedef struct {
 	int horizontal;			// TRUE if the scroller is horiz. FALSE o/w
 	char *text;				// ptr to actual text
-	FONT *fnt;				// ptr to font to use
 	int font_height;		
 	int width, height;		// size of window
 	int offset;				
@@ -40,7 +39,7 @@ typedef struct {
 } Tscroller;
 
 // functions
-void init_scroller(Tscroller *sc, FONT *f, char *t, int w, int h, int horiz);
+void init_scroller(Tscroller *sc, char *t, int w, int h, int horiz);
 void draw_scroller(Tscroller *sc, BITMAP *bmp, int x, int y);
 void scroll_scroller(Tscroller *sc, int step);
 int scroller_is_visible(Tscroller *sc);

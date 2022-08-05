@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -19,21 +19,19 @@
 
 #include <stdio.h>
 #include <string.h>
-
-#include "allegro.h"
+#include "sdl_port.h"
 #include "scroller.h"
 
 // initiates a scroller
 // the input text (t) will be messed up if horiz = 0 (vertical scroller)
-void init_scroller(Tscroller *sc, FONT *f, char *t, int w, int h, int horiz) {
-	sc->fnt = f;
-	sc->font_height = text_height(sc->fnt);
+void init_scroller(Tscroller *sc, char *t, int w, int h, int horiz) {
+	sc->font_height = text_height();
 	sc->height = h;
 	sc->horizontal = horiz;
 	sc->text = t;
 	sc->width = w;	
 	if (sc->horizontal) {
-		sc->length = text_length(sc->fnt, sc->text);
+		sc->length = text_length(sc->text);
 		sc->offset = sc->width;
 	}
 	else {
@@ -59,9 +57,8 @@ void draw_scroller(Tscroller *sc, BITMAP *bmp, int x, int y) {
 		if (sc->offset < -sc->length) return;
 		if (sc->offset > sc->width) return;
 		set_clip_rect(bmp, x, y, x + sc->width, y + sc->height);
-		textout_ex(bmp, sc->fnt, sc->text, x + sc->offset + 1, y + 1, 1, -1);
-		textout_ex(bmp, sc->fnt, sc->text, x + sc->offset, y, 3, -1);
-		set_clip_rect(bmp, 0, 0, bmp->w-1, bmp->h-1);
+		textout_ex(bmp, sc->text, x + sc->offset + 1, y + 1, 1, -1);
+		textout_ex(bmp, sc->text, x + sc->offset, y, 3, -1);
 	}
 	else {
 		int i;
@@ -71,10 +68,10 @@ void draw_scroller(Tscroller *sc, BITMAP *bmp, int x, int y) {
 		for(i=0;i<sc->rows;i++) {
 			if (i * sc->font_height + sc->offset <= sc->height) 
 				if ((i+1) * sc->font_height + sc->offset >= 0)
-					textout_centre_ex(bmp, sc->fnt, sc->lines[i], x+(sc->width>>1) , i * sc->font_height + y + sc->offset, -1, -1);
+					textout_centre_ex(bmp, sc->lines[i], x+(sc->width>>1) , i * sc->font_height + y + sc->offset, -1, -1);
 		}
-		set_clip_rect(bmp, 0, 0, bmp->w-1, bmp->h-1);
 	}
+	reset_clip_rect(bmp);
 }
 
 // scrolls the text #step steps

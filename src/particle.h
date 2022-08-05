@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -20,7 +20,7 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
-#include <allegro.h>
+#include "sdl_port.h"
 #include "map.h"
 
 // maximum number of particles at anytime
@@ -40,7 +40,6 @@ typedef struct {
 extern Tparticle particle[MAX_PARTICLES];
 
 // functions
-void set_datafile(DATAFILE *d);
 void reset_particles(Tparticle *p, int max);
 Tparticle *get_free_particle(Tparticle *p, int max);
 void set_particle(Tparticle *p, int x, int y, double dx, double dy, int color, int life, int bmp);

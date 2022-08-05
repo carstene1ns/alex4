@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -19,21 +19,21 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "allegro.h"
+#include "sdl_port.h"
 #include "script.h"
 #include "timer.h"
 #include "token.h"
 #include "main.h"
+#include "misc.h"
+#include "sound.h"
 
-#include "../data/data.h"
+#include "data.h"
 
 // silly value 
 #define		NO_CHANGE	-3249587
 
 // array holding the sounds ids
 int active_sounds[MAX_SCRIPT_SOUNDS];
-// datafile to use
-extern DATAFILE *data;
 // internal buffers
 BITMAP *buffer;
 BITMAP *swap_buffer;
@@ -43,7 +43,7 @@ int script_done = 0;
 Tscript_object *objects = NULL;
 
 // shows a speak bulb 
-void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int left, int lines, char **rows, int arrow) {
+void draw_speak_bulb(BITMAP *bmp, int src_x, int src_y, int up, int left, int lines, char **rows, int arrow) {
 	int i;
 	int max_w = 0;
 	int x1, y1, x2, y2;		// bulb coords
@@ -51,7 +51,7 @@ void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int
 
 	// get max text length
 	for(i = 0; i < lines; i ++) {
-		int len = text_length(d[THE_FONT].dat, rows[i]);
+		int len = text_length(rows[i]);
 		if (max_w < len) max_w = len;
 	}
 
@@ -76,16 +76,16 @@ void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int
 	line(bmp, x1 + 4, y2, x2 - 4, y2, 1);
 	line(bmp, x2+1, y1 + 4, x2+1, y2 - 4, 1);
 	line(bmp, x1 + 4, y2+1, x2 - 4, y2+1, 1);
-	draw_sprite(bmp, d[BULB_TL].dat, x1, y1);
-	draw_sprite(bmp, d[BULB_BL].dat, x1, y2 - 5);
-	draw_sprite(bmp, d[BULB_TR].dat, x2 - 5, y1);
-	draw_sprite(bmp, d[BULB_BR].dat, x2 - 5, y2 - 5);
+	draw_sprite(bmp, bitmaps[I_BULB_TL], x1, y1);
+	draw_sprite(bmp, bitmaps[I_BULB_BL], x1, y2 - 5);
+	draw_sprite(bmp, bitmaps[I_BULB_TR], x2 - 5, y1);
+	draw_sprite(bmp, bitmaps[I_BULB_BR], x2 - 5, y2 - 5);
 	if (arrow)
-		draw_sprite(bmp, d[(left ? (up ? BULBA_TL : BULBA_BL) : (up ? BULBA_TR : BULBA_BR))].dat, xa, ya);
+		draw_sprite(bmp, bitmaps[(left ? (up ? I_BULBA_TL : I_BULBA_BL) : (up ? I_BULBA_TR : I_BULBA_BR))], xa, ya);
 
 	// draw text
 	for(i = 0; i < lines; i ++) {
-		textout_ex(bmp, d[THE_FONT].dat, rows[i], x1 + 4, y1 + 5 + i * 9, 1, -1);
+		textout_ex(bmp, rows[i], x1 + 4, y1 + 5 + i * 9, 1, -1);
 	}
 }
 
@@ -95,7 +95,7 @@ void esc_rest(int millis) {
 	int count = 0;
 	while(count < clicks && !key[KEY_ESC]) {
 		cycle_count = 0;
-		poll_music();
+		update_sdl_keyboard();
 		count ++;
 		while(!cycle_count)
 			rest(20);
@@ -155,26 +155,26 @@ int set_object(char *name, int x, int y, int dir) {
 
 	// set bitmap
 	if (!stricmp(name, "helicopter")) {
-		o->bmp[0] = data[CHOPPER1].dat;
-		o->bmp[1] = data[CHOPPER2].dat;
-		o->bmp[2] = data[CHOPPER3].dat;
-		o->bmp[3] = data[CHOPPER4].dat;
+		o->bmp[0] = bitmaps[I_CHOPPER1];
+		o->bmp[1] = bitmaps[I_CHOPPER2];
+		o->bmp[2] = bitmaps[I_CHOPPER3];
+		o->bmp[3] = bitmaps[I_CHOPPER4];
 		o->frames = 4;
 	}
-	else if (!stricmp(name, "cage1")) o->bmp[0] = data[CAGE_SML1].dat;
-	else if (!stricmp(name, "cage2")) o->bmp[0] = data[CAGE_BIG].dat;
-	else if (!stricmp(name, "cage3")) o->bmp[0] = data[CAGE_SML2].dat;
-	else if (!stricmp(name, "chain")) o->bmp[0] = data[CHAIN].dat;
-	else if (!stricmp(name, "lola"))  o->bmp[0] = data[LOLA].dat;
-	else if (!stricmp(name, "alex"))  o->bmp[0] = data[ALEX].dat;
-	else if (!stricmp(name, "ufo"))   o->bmp[0] = data[UFO_BIG].dat;
-	else if (!stricmp(name, "ufo0"))  o->bmp[0] = data[UFO0].dat;
-	else if (!stricmp(name, "ufo1"))  o->bmp[0] = data[UFO1].dat;
-	else if (!stricmp(name, "beam"))  o->bmp[0] = data[UFOBEAM].dat;
-	else if (!stricmp(name, "ship0"))  o->bmp[0] = data[SHIP0].dat;
-	else if (!stricmp(name, "ship1"))  o->bmp[0] = data[SHIP1].dat;
-	else if (!stricmp(name, "ball"))  o->bmp[0] = data[HERO_BALL].dat;
-	else if (!strncmp(name, "drumcan", 7))  o->bmp[0] = data[DRUMCAN].dat;
+	else if (!stricmp(name, "cage1")) o->bmp[0] = bitmaps[I_CAGE_SML1];
+	else if (!stricmp(name, "cage2")) o->bmp[0] = bitmaps[I_CAGE_BIG];
+	else if (!stricmp(name, "cage3")) o->bmp[0] = bitmaps[I_CAGE_SML2];
+	else if (!stricmp(name, "chain")) o->bmp[0] = bitmaps[I_CHAIN];
+	else if (!stricmp(name, "lola"))  o->bmp[0] = bitmaps[I_LOLA];
+	else if (!stricmp(name, "alex"))  o->bmp[0] = bitmaps[I_ALEX];
+	else if (!stricmp(name, "ufo"))   o->bmp[0] = bitmaps[I_UFO_BIG];
+	else if (!stricmp(name, "ufo0"))  o->bmp[0] = bitmaps[I_UFO0];
+	else if (!stricmp(name, "ufo1"))  o->bmp[0] = bitmaps[I_UFO1];
+	else if (!stricmp(name, "beam"))  o->bmp[0] = bitmaps[I_UFOBEAM];
+	else if (!stricmp(name, "ship0"))  o->bmp[0] = bitmaps[I_SHIP0];
+	else if (!stricmp(name, "ship1"))  o->bmp[0] = bitmaps[I_SHIP1];
+	else if (!stricmp(name, "ball"))  o->bmp[0] = bitmaps[I_HERO_BALL];
+	else if (!strncmp(name, "drumcan", 7))  o->bmp[0] = bitmaps[I_DRUMCAN];
 	else o->bmp[0] = NULL;
 
 	// rearrange pointers
@@ -278,7 +278,7 @@ void cmd_showbmp(char *name) {
 		blit(buffer, swap_buffer, 0, 0, 0, 0, 160, 120);
 	}
 	else if (!stricmp(name, "treetops")) {
-		blit(data[INTRO_BG].dat, swap_buffer, 0, 0, 0, 0, 160, 120);
+		blit(bitmaps[I_INTRO_BG], swap_buffer, 0, 0, 0, 0, 160, 120);
 	}
 	else if (!stricmp(name, "darkness")) {
 		clear_to_color(swap_buffer, 2);
@@ -299,11 +299,11 @@ void cmd_drawmap() {
 }
 
 void cmd_fadein() {
-	fade_in_pal(100);
+	fade_in_pal(swap_buffer, 100);
 }
 
 void cmd_fadeout() {
-	fade_out_pal(100);
+	fade_out_pal(swap_buffer, 100);
 }
 
 void cmd_speak(Ttoken *t, int arrow) {
@@ -328,7 +328,7 @@ void cmd_speak(Ttoken *t, int arrow) {
 		t = (Ttoken *)t->next;
 	}
 
-	draw_speak_bulb(swap_buffer, data, sx, sy, up, left, lines, rows, arrow);
+	draw_speak_bulb(swap_buffer, sx, sy, up, left, lines, rows, arrow);
 }
 
 int remember_sound(int id) {
@@ -487,7 +487,7 @@ void cmd_run(Ttoken *t) {
 		while(cycle_count > 0 && loops && !script_done) {
 			logic_count ++;
 
-			poll_music();
+			update_sdl_keyboard();
 
 			// update objects
 			o = objects;
@@ -519,7 +519,7 @@ void cmd_run(Ttoken *t) {
 				else if (o->dir == 0)
 					draw_sprite(swap_buffer, o->bmp[frame], o->x, o->y);
 				else // rotate
-					rotate_sprite(swap_buffer, o->bmp[frame], o->x, o->y, itofix(-8*i));
+					rotate_sprite(swap_buffer, o->bmp[frame], o->x, o->y, -8*i); // FIXME: itofix i
 			}
 			else if (o->line) {
 				line(swap_buffer, ((Tscript_object *)o->line_from)->x + o->x,
@@ -556,15 +556,12 @@ char *get_line(char *dst, char *src) {
 
 // runs a script
 // returns -1 is esc was pressed, 0 o/w
-int run_script(char *script, DATAFILE *d) {
+int run_script(int id) {
 	char buf[512];
 	Ttoken *token;
 	int i;
 
-	// set datafile
-	data = d;
-
-	clear_keybuf();
+	char *script = (char*)scripts[id].dat;
 
 	// init sound memory
 	for(i = 0; i < MAX_SCRIPT_SOUNDS; i ++) active_sounds[i] = -1;
@@ -610,6 +607,9 @@ int run_script(char *script, DATAFILE *d) {
 			}
 		}
 	}
+
+	if (script_done != -1)
+		fade_out_pal(swap_buffer, 100);
 
 	// destroy buffers
 	delete_all_objects();

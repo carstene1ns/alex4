@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -20,7 +20,7 @@
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
-#include <allegro.h>
+#include "sdl_port.h"
 
 // struct holding script data
 typedef struct {
@@ -42,7 +42,7 @@ typedef struct {
 extern int active_sounds[MAX_SCRIPT_SOUNDS];
 
 // functions
-int run_script(char *script, DATAFILE *d);
-void draw_speak_bulb(BITMAP *bmp, DATAFILE *d, int src_x, int src_y, int up, int left, int lines, char **rows, int arrow);
+int run_script(int id);
+void draw_speak_bulb(BITMAP *bmp, int src_x, int src_y, int up, int left, int lines, char **rows, int arrow);
 
 #endif

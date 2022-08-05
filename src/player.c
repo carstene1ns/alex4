@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -19,7 +19,7 @@
 
 #include "player.h"
 #include "timer.h"
-#include "../data/data.h"
+#include "data.h"
 
 // the player
 Tplayer player;
@@ -32,26 +32,26 @@ void draw_player(BITMAP *bmp, Tplayer *p, int x, int y) {
 	if (p->wounded && (game_count % 2)) return;
 
 	if (p->actor->status == AC_DEAD) {	
-		head = p->actor->data[HERO_NORM].dat;
-		body = p->actor->data[HERO_JUMP].dat;
+		head = bitmaps[I_HERO_NORM];
+		body = bitmaps[I_HERO_JUMP];
 		draw_sprite_v_flip(bmp, body, x, y - 32);
 		draw_sprite_v_flip(bmp, head, x, y - 16);
 	}
 	else if (p->actor->status == AC_BALL) {
 		if (!p->actor->direction) 
-			rotate_sprite(bmp, p->actor->data[HERO_BALL].dat, x, y-16, itofix(p->angle));
+			rotate_sprite(bmp, bitmaps[I_HERO_BALL], x, y-16, p->angle); // FIXME: itofix angle
 		else
-			rotate_sprite_v_flip(bmp, p->actor->data[HERO_BALL].dat, x, y-16, itofix(p->angle + 128));
+			rotate_sprite_v_flip(bmp, bitmaps[I_HERO_BALL], x, y-16, p->angle + 128); // FIXME: itofix angle
 	}
 	else if (p->actor->status != AC_EAT) {
-		if (p->actor->status == AC_FULL) head = p->actor->data[HERO_FULL].dat;
-		else if (p->actor->status == AC_SPIT) head = p->actor->data[HERO_SPIT].dat;
-		else head = p->actor->data[HERO_NORM].dat;
+		if (p->actor->status == AC_FULL) head = bitmaps[I_HERO_FULL];
+		else if (p->actor->status == AC_SPIT) head = bitmaps[I_HERO_SPIT];
+		else head = bitmaps[I_HERO_NORM];
 
 		if (p->jumping)
-			body = p->actor->data[HERO_JUMP].dat;
+			body = bitmaps[I_HERO_JUMP];
 		else
-			body = p->actor->data[p->actor->frames[p->actor->frame]].dat;
+			body = bitmaps[p->actor->frames[p->actor->frame]];
 
 		if (p->actor->direction) {
 			draw_sprite_h_flip(bmp, body, x, y - 16);
@@ -65,15 +65,15 @@ void draw_player(BITMAP *bmp, Tplayer *p, int x, int y) {
 	else {
 		if (!p->jumping) {
 			if (p->actor->direction) {
-				draw_sprite_h_flip(bmp, p->actor->data[HERO_EAT].dat, x, y - 16);
+				draw_sprite_h_flip(bmp, bitmaps[I_HERO_EAT], x, y - 16);
 			}
 			else {
-				draw_sprite(bmp, p->actor->data[HERO_EAT].dat, x - 16, y - 16);
+				draw_sprite(bmp, bitmaps[I_HERO_EAT], x - 16, y - 16);
 			}
 		}
 		else {
-			head = p->actor->data[HERO_SPIT].dat;
-			body = p->actor->data[HERO_JUMP].dat;
+			head = bitmaps[I_HERO_SPIT];
+			body = bitmaps[I_HERO_JUMP];
 			if (p->actor->direction) {
 				draw_sprite_h_flip(bmp, body, x, y - 16);
 				draw_sprite_h_flip(bmp, head, x, y - 16);

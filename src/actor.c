@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -17,7 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#include "allegro.h"
+#include "sdl_port.h"
 #include "actor.h"
 #include "map.h"
 #include "timer.h"
@@ -25,11 +25,9 @@
 #include "bullet.h"
 #include "particle.h"
 #include "main.h"
+#include "sound.h"
 
-#include "../data/data.h"
-
-// pointer to datafile declared in main.c
-extern DATAFILE* data;
+#include "data.h"
 
 // draw an actor at specified position
 void draw_actor(BITMAP *bmp, Tactor *a, int x, int y) {
@@ -39,23 +37,23 @@ void draw_actor(BITMAP *bmp, Tactor *a, int x, int y) {
 	if (a->status == AC_NORM) {
 		// normal drawing, just select direction
 		if (a->direction) 
-			draw_sprite_h_flip(bmp, a->data[a->frames[a->frame] + (a->is_hit ? a->hit_offset : 0)].dat, x, y - a->h - a->oy);
+			draw_sprite_h_flip(bmp, bitmaps[a->frames[a->frame] + (a->is_hit ? a->hit_offset : 0)], x, y - a->h - a->oy);
 		else
-			draw_sprite(bmp, a->data[a->frames[a->frame] + (a->is_hit ? a->hit_offset : 0)].dat, x, y - a->h - a->oy);
+			draw_sprite(bmp, bitmaps[a->frames[a->frame] + (a->is_hit ? a->hit_offset : 0)], x, y - a->h - a->oy);
 	}
 	else if (a->status == AC_DEAD) {
 		// draw dead frame, check for direction
 		if (a->direction) 
-			draw_sprite_vh_flip(bmp, a->data[a->frames[a->frame]].dat, x, y - a->h - a->oy);
+			draw_sprite_vh_flip(bmp, bitmaps[a->frames[a->frame]], x, y - a->h - a->oy);
 		else
-			draw_sprite_v_flip(bmp, a->data[a->frames[a->frame]].dat, x, y - a->h - a->oy);
+			draw_sprite_v_flip(bmp, bitmaps[a->frames[a->frame]], x, y - a->h - a->oy);
 	}
 	else if (a->status == AC_FLAT) {
 		// draw flat frame, check for direction
 		if (a->direction) 
-			draw_sprite_h_flip(bmp, a->data[a->flat_frame].dat, x, y - a->h - a->oy);
+			draw_sprite_h_flip(bmp, bitmaps[a->flat_frame], x, y - a->h - a->oy);
 		else
-			draw_sprite(bmp, a->data[a->flat_frame].dat, x, y - a->h - a->oy);
+			draw_sprite(bmp, bitmaps[a->flat_frame], x, y - a->h - a->oy);
 	}
 }
 
@@ -72,7 +70,7 @@ void animate_actor(Tactor *a) {
 
 // gets an unused actor from the array a
 // a = array to look in
-Tactor *make_actor(Tactor *a, int x, int y, DATAFILE *data) {
+Tactor *make_actor(Tactor *a, int x, int y) {
 	int i = 0;
 	// find free slot
 	while(a[i].active && i < MAX_ACTORS) i ++;
@@ -84,7 +82,6 @@ Tactor *make_actor(Tactor *a, int x, int y, DATAFILE *data) {
 		a[i].x = x;
 		a[i].y = y;
 		a[i].direction = 0;
-		a[i].data = data;
 
 		a[i].frame = 0;
 		a[i].anim_counter = 0;
@@ -119,26 +116,26 @@ void _crush_jump(Tactor *a, Tmap *m) {
 	// check ground
 	if (is_ground(m, a->x+1, a->y)) {
 		a->y += adjust_ypos(m, a->x+1, a->y - 1, 1, -1);
-		create_burst(particle, a->x +  8, a->y, 8, 10, 25, PARTICLE_DUST);
-		create_burst(particle, a->x + 16, a->y, 8, 10, 25, PARTICLE_DUST);
-		create_burst(particle, a->x + 24, a->y, 8, 10, 25, PARTICLE_DUST);
-		play_sound_id(SMPL_CRUSH_LAND);
+		create_burst(particle, a->x +  8, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		create_burst(particle, a->x + 16, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		create_burst(particle, a->x + 24, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		play_sound_id(S_IMPACT);
 		a->mode ++;
 	}
 	else if (is_ground(m, a->x+15, a->y)) {
 		a->y += adjust_ypos(m, a->x+15, a->y - 1, 1, -1);
-		create_burst(particle, a->x +  8, a->y, 8, 10, 25, PARTICLE_DUST);
-		create_burst(particle, a->x + 16, a->y, 8, 10, 25, PARTICLE_DUST);
-		create_burst(particle, a->x + 24, a->y, 8, 10, 25, PARTICLE_DUST);
-		play_sound_id(SMPL_CRUSH_LAND);
+		create_burst(particle, a->x +  8, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		create_burst(particle, a->x + 16, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		create_burst(particle, a->x + 24, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		play_sound_id(S_IMPACT);
 		a->mode ++;
 	}
 	else if (is_ground(m, a->x+30, a->y)) {
 		a->y += adjust_ypos(m, a->x+30, a->y - 1, 1, -1);
-		create_burst(particle, a->x +  8, a->y, 8, 10, 25, PARTICLE_DUST);
-		create_burst(particle, a->x + 16, a->y, 8, 10, 25, PARTICLE_DUST);
-		create_burst(particle, a->x + 24, a->y, 8, 10, 25, PARTICLE_DUST);
-		play_sound_id(SMPL_CRUSH_LAND);
+		create_burst(particle, a->x +  8, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		create_burst(particle, a->x + 16, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		create_burst(particle, a->x + 24, a->y, 8, 10, 25, I_PARTICLE_DUST);
+		play_sound_id(S_IMPACT);
 		a->mode ++;
 	}
 }
@@ -166,11 +163,11 @@ void _spike_jump(Tactor *a, Tmap *m) {
 			mp->tile = mp->type = mp->mask = 0;
 			create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 32, 64, 0, -1);
 			create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 32, 64, 0, -1);
-			play_sound_id(SMPL_CRUSH);
+			play_sound_id(S_CRUSH);
 		}
 
-		create_burst(particle, a->x + 16, a->y, 8, 6, 25, PARTICLE_DUST);
-		play_sound_id(SMPL_CRUSH_LAND);
+		create_burst(particle, a->x + 16, a->y, 8, 6, 25, I_PARTICLE_DUST);
+		play_sound_id(S_IMPACT);
 		a->toggle = 1;  // don't crush any more , fall and land
 	}
 
@@ -186,11 +183,11 @@ void _spike_jump(Tactor *a, Tmap *m) {
 			mp->tile = mp->type = mp->mask = 0;
 			create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 32, 64, 0, -1);
 			create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 32, 64, 0, -1);
-			play_sound_id(SMPL_CRUSH);
+			play_sound_id(S_CRUSH);
 		}
 
-		create_burst(particle, a->x + 16, a->y, 8, 6, 25, PARTICLE_DUST);
-		play_sound_id(SMPL_CRUSH_LAND);
+		create_burst(particle, a->x + 16, a->y, 8, 6, 25, I_PARTICLE_DUST);
+		play_sound_id(S_IMPACT);
 		a->toggle = 1;  // don't crush any more , fall and land
 	}
 
@@ -206,11 +203,11 @@ void _spike_jump(Tactor *a, Tmap *m) {
 			mp->tile = mp->type = mp->mask = 0;
 			create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 32, 64, 0, -1);
 			create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 32, 64, 0, -1);
-			play_sound_id(SMPL_CRUSH);
+			play_sound_id(S_CRUSH);
 		}
 
-		create_burst(particle, a->x + 16, a->y, 8, 6, 25, PARTICLE_DUST);
-		play_sound_id(SMPL_CRUSH_LAND);
+		create_burst(particle, a->x + 16, a->y, 8, 6, 25, I_PARTICLE_DUST);
+		play_sound_id(S_IMPACT);
 		a->toggle = 1;  // don't crush any more , fall and land
 	}
 
@@ -222,7 +219,7 @@ void _spike_jump(Tactor *a, Tmap *m) {
 void update_actor_with_map(Tactor *a, Tmap *m) {
 	if (a->energy <= 0 && a->status == AC_NORM) {
 		a->status = AC_DEAD;	
-		play_sound_id(SMPL_E_DIE);
+		play_sound_id(S_KILL);
 		a->dy = -8;
 		if (a->type == MAP_GUARD1) a->dy =- 16;
 		
@@ -239,7 +236,7 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 			Tparticle *p;
 			p = get_free_particle(particle, MAX_PARTICLES);
 			if (p != NULL) {
-				set_particle(p, a->x + 8 + rand()%16, a->y - 8 - rand()%16, 0, 0, -1, 16, SMOKE1);
+				set_particle(p, a->x + 8 + rand()%16, a->y - 8 - rand()%16, 0, 0, -1, 16, I_SMOKE1);
 			}
 		}
 	} 
@@ -265,10 +262,10 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 			Tbullet *b = get_free_bullet(bullet, MAX_BULLETS);
 			if (b != NULL) {
 				int diff = (player.actor->x + 8) - (a->x + 8);
-				set_bullet(b, a->x + (diff > 0 ? 8 : -12), a->y - 16, (diff > 0 ? 3 : -3), 0, data[ENEMY6].dat, 1);
-				create_burst(particle, a->x + (diff > 0 ? 18 : -2), a->y - 8, 8, 8, 25, PARTICLE_DUST);
+				set_bullet(b, a->x + (diff > 0 ? 8 : -12), a->y - 16, (diff > 0 ? 3 : -3), 0, bitmaps[I_ENEMY6], 1);
+				create_burst(particle, a->x + (diff > 0 ? 18 : -2), a->y - 8, 8, 8, 25, I_PARTICLE_DUST);
 				a->mode = 0;
-				play_sound_id(SMPL_SHOOT);
+				play_sound_id(S_SHOOT);
 			}
 		}
 	}
@@ -290,7 +287,7 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 			}
 
 			if (a->type == MAP_ENEMY5) {
-				a->frames[0] = (a->dy < 0 ? ENEMY5_02 : ENEMY5_01);
+				a->frames[0] = (a->dy < 0 ? I_ENEMY5_02 : I_ENEMY5_01);
 			}
 		}
 		else if (a->mode >= 2) {
@@ -328,8 +325,8 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 			if (hit) {
 				a->dy = -1;
 				a->mode = 3;
-				play_sound_id(SMPL_CRUSH_LAND);
-				create_burst(particle, a->x + 16, a->y, 8, 6, 25, PARTICLE_DUST);
+				play_sound_id(S_IMPACT);
+				create_burst(particle, a->x + 16, a->y, 8, 6, 25, I_PARTICLE_DUST);
 			}
 		}
 		else if (a->mode >= 3) {
@@ -361,8 +358,8 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 		Tactor *alex = get_alex();
 		switch(a->mode) {
 			case 0:		// wait
-				a->frames[0] = GUARD2_1a;
-				a->frames[1] = GUARD2_1b;
+				a->frames[0] = I_GUARD2_1A;
+				a->frames[1] = I_GUARD2_1B;
 				a->counter ++; 
 				if (a->counter > 60) {
 					a->mode ++;
@@ -375,14 +372,14 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 				a->mode ++;
 				break;
 			case 2:		// jump
-				a->frames[0] = a->frames[1] = GUARD2_2;
+				a->frames[0] = a->frames[1] = I_GUARD2_2;
 				_crush_jump(a, m);
 				break;
 			case 3:		// land, goto 0
 				a->mode = 0;
 				break;
 			case 4:		// turn on spikes, wait
-				a->frames[0] = a->frames[1] = GUARD2_3;
+				a->frames[0] = a->frames[1] = I_GUARD2_3;
 				a->counter ++; 
 				if (a->counter > 50) {
 					a->mode ++;
@@ -396,12 +393,12 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 				a->toggle = 0;  // crush
 				break;
 			case 6:		// jump 
-				a->frames[0] = a->frames[1] = GUARD2_4;
+				a->frames[0] = a->frames[1] = I_GUARD2_4;
 				if (a->toggle) _crush_jump(a, m);
 				else _spike_jump(a, m);
 				break;
 			case 7:		// land, short wait
-				a->frames[0] = a->frames[1] = GUARD2_5;
+				a->frames[0] = a->frames[1] = I_GUARD2_5;
 				a->counter ++; 
 				if (a->counter > 50) {
 					a->mode ++;
@@ -412,13 +409,13 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 				Tbullet *b;
 				int i;
 				
-				play_sound_id(SMPL_SHOOT);
+				play_sound_id(S_SHOOT);
 				for(i = 0; i < 3; i ++) {
 					b = get_free_bullet(bullet, MAX_BULLETS);
 					if (b != NULL) {
-						set_bullet(b, a->x + 16, a->y - 32, rand()%5 - 2, -(rand()%5 + 2), data[BULLET_1].dat, 1);
+						set_bullet(b, a->x + 16, a->y - 32, rand()%5 - 2, -(rand()%5 + 2), bitmaps[I_BULLET_1], 1);
 						b->animate = b->gravity = 1;
-						b->bmp2 = data[BULLET_2].dat;
+						b->bmp2 = bitmaps[I_BULLET_2];
 					}
 				}
 				a->mode ++;
@@ -432,7 +429,7 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 				}
 				break;
 			case 10:		// spikes off
-				a->frames[0] = a->frames[1] = GUARD2_6;
+				a->frames[0] = a->frames[1] = I_GUARD2_6;
 				a->mode ++;
 				break;
 			case 11:		// wait
@@ -443,8 +440,8 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 				}
 				break;
 			case 12:		// return
-				a->frames[0] = GUARD2_1a;
-				a->frames[1] = GUARD2_1b;
+				a->frames[0] = I_GUARD2_1A;
+				a->frames[1] = I_GUARD2_1B;
 				a->mode = 0;
 				break;
 		}
@@ -478,7 +475,7 @@ void update_actor_with_map(Tactor *a, Tmap *m) {
 
 	// play/adjust sound
 	if (a->sound != -1) {
-		adjust_sound_id_ex(a->sound, a->x);
+		adjust_sound_id_ex(a->sound, player.actor->x, a->x);
 	}
 
 	if (a->y > 160 + (a->type == MAP_GUARD2 || a->type == MAP_GUARD1 ? 600 : 0)) {

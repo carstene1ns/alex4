@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -21,13 +21,6 @@
 
 // the particles themselves
 Tparticle particle[MAX_PARTICLES];
-// pointer to datafile
-extern DATAFILE *data;
-
-// set datafile to use
-void set_datafile(DATAFILE *d) {
-	data = d;
-}
 
 // inits variables in a particle
 void set_particle(Tparticle *p, int x, int y, double dx, double dy, int color, int life, int bmp) {
@@ -53,7 +46,7 @@ void draw_particle(BITMAP *bmp, Tparticle*p, int ox, int oy) {
 	if (p->bmp == -1)
 		putpixel(bmp, x, y, p->color);
 	else {
-		BITMAP *b = data[p->bmp + (p->color == -1 ? p->count>>1 : 0)].dat;
+		BITMAP *b = bitmaps[p->bmp + (p->color == -1 ? p->count>>1 : 0)];
 		draw_sprite(bmp, b, x - b->w/2, y - b->h/2);
 	}
 }
