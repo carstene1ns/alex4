@@ -30,6 +30,19 @@ target_include_directories(miniz
 	PUBLIC ext/miniz
 )
 
+# iniparser
+
+add_library(iniparser STATIC
+	ext/iniparser/dictionary.h
+	ext/iniparser/dictionary.c
+	ext/iniparser/iniparser.h
+	ext/iniparser/iniparser.c
+)
+
+target_include_directories(iniparser
+	PUBLIC ext/iniparser
+)
+
 # alex4
 
 add_executable(alex4
@@ -147,7 +160,7 @@ add_custom_target(alex4-data ALL DEPENDS ${zip_files})
 find_package(SDL2 REQUIRED VERBOSE)
 find_package(SDL2_mixer REQUIRED VERBOSE)
 
-target_link_libraries(alex4 miniz SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+target_link_libraries(alex4 miniz iniparser SDL2::SDL2 SDL2_mixer::SDL2_mixer)
 
 # installation
 
