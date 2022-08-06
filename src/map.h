@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -21,7 +21,8 @@
 #define MAP_H
 
 #include <stdio.h>
-#include <allegro.h>
+#include "sdl_port.h"
+#include "data.h"
 
 // some directions for expanding/shrinking the map
 #define SM_UP		0x01
@@ -72,8 +73,7 @@ typedef struct {
 // map header (overall stuff)
 typedef struct {
 	char name[32];
-	char dummy[27];
-	char map_data_needs_to_be_destroyed;
+	char dummy[28];
 	char win_conditions_fullfilled;
 	char num_enemies;
 	char boss_level;
@@ -82,7 +82,7 @@ typedef struct {
 	Tmappos *dat;
 	int offset_x;
 	int offset_y;
-	DATAFILE *data;
+	char dummy2[4]; // unused datafile pointer
 	int start_x;
 	int start_y;
 } Tmap;
@@ -91,7 +91,8 @@ typedef struct {
 Tmap *create_map(int w, int h);
 void destroy_map(Tmap *m);
 Tmap *load_map(const char *fname);
-Tmap *load_map_from_memory(void *mem);
+Tmap *load_map_from_memory(int id);
+Tmap *load_scriptmap_from_memory(int id);
 int save_map(Tmap *m, char *fname);
 void change_map_size(Tmap *m, int dw, int dh, int dir_flags);
 

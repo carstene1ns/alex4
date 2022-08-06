@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -20,16 +20,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef __FreeBSD__
-#include <machine/endian.h>
-#else
-#include <endian.h>
-#endif
-
-#include "allegro.h"
+#include "alex4.h"
+#include "sdl_port.h"
 #include "map.h"
 #include "timer.h"
-#include "../data/data.h"
+#include "data.h"
 
 // creates one splendid map 
 Tmap *create_map(int w, int h) {
@@ -40,7 +35,6 @@ Tmap *create_map(int w, int h) {
 
 	strcpy(m->name, "noname");
 
-	m->map_data_needs_to_be_destroyed = 1;
 	m->boss_level = 0;
 	m->num_enemies = 0;
 	m->start_x = 2;
@@ -65,87 +59,48 @@ Tmap *create_map(int w, int h) {
 	return m;
 }
 
-static void mem_to_int(int *dest, unsigned char *mem)
-{
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	memcpy(dest, mem, 4);
-#else
-	*dest = mem[0] | (((int)mem[1]) << 8) | (((int)mem[2]) << 16) |
-		(((int)mem[3]) << 24);
-#endif
-}
-
-static int fread_int(int *dest, FILE *fp)
-{
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	return (fread(dest, 4, 1, fp));
-#else
-	unsigned char buf[4];
-	if (fread(buf, 1, 4, fp) < 4)
-		return 0;
-	mem_to_int(dest, buf);
-	return 1;
-#endif
-}
-
-static int fwrite_int(const int *src, FILE *fp)
-{
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	return (fwrite(src, 4, 1, fp));
-#else
-	unsigned char buf[4];
-	buf[0] = *src;
-	buf[1] = *src >> 8;
-	buf[2] = *src >> 16;
-	buf[3] = *src >> 24;
-	return (fwrite(buf, 1, 4, fp) == 4? 1: 0);
-#endif
-}
-
-// loads one splendind map from disk
-Tmap *load_map(const char *fname) {
+// generic map loader
+Tmap *load_map_from_RWops(SDL_RWops *rw) {
 	Tmap *m;
-	FILE *fp;
 	char header[6];
-	
-	// open file
-	fp = fopen(fname, "rb");
-	if (fp == NULL) {
-		return NULL;
-	}
+
+	if (!rw) return NULL;
 
 	// does the header match?
-	if (fread(header, 6, 1, fp) != 1) {
-		fclose(fp);
+	if (SDL_RWread(rw, header, 6, 1) != 1) {
+		SDL_RWclose(rw);
 		return NULL;
 	}
 	if (header[0] != 'A' && header[1] != 'X' && header[2] != '4' && header[3] != 'M' && header[4] != 'A' && header[5] != 'P') {
-		fclose(fp);
+		SDL_RWclose(rw);
 		return NULL;
 	}
 
 	// get memory
 	m = malloc(sizeof(Tmap));
 	if (m == NULL) {
-		fclose(fp);
+		SDL_RWclose(rw);
 		return NULL;
 	}
-	
+
+	Sint64 pos = SDL_RWtell(rw);
+
 	// read datastruct
 	// a mapfile contain a raw dump of the Tmap struct made on an i386
 	// the code below reads these struct dumps in an arch neutral manner
 	// Note this dumps contains pointers, these are not used because these
 	// ofcourse point to some no longer valid address.
-	if (fread(m, 64, 1, fp) +           // first 64 bytes data
-		fread_int(&(m->width), fp) +
-		fread_int(&(m->height), fp) +
-		fread(header, 4, 1, fp) +       // skip the first pointer
-		fread_int(&(m->offset_x), fp) +
-		fread_int(&(m->offset_y), fp) +
-		fread(header, 4, 1, fp) +       // skip the second pointer
-		fread_int(&(m->start_x), fp) +
-		fread_int(&(m->start_y), fp) != 9) {
-		fclose(fp);
+	SDL_RWread(rw, m, 64, 1);       // first 64 bytes data
+	m->width = SDL_ReadLE32(rw);
+	m->height = SDL_ReadLE32(rw);
+	SDL_RWseek(rw, 4, RW_SEEK_CUR); // skip first pointer
+	m->offset_x = SDL_ReadLE32(rw);
+	m->offset_y = SDL_ReadLE32(rw);
+	SDL_RWseek(rw, 4, RW_SEEK_CUR); // skip second pointer
+	m->start_x = SDL_ReadLE32(rw);
+	m->start_y = SDL_ReadLE32(rw);
+	if(SDL_RWtell(rw) != pos + 96) {
+		SDL_RWclose(rw);
 		free(m);
 		return NULL;
 	}
@@ -153,130 +108,108 @@ Tmap *load_map(const char *fname) {
 	// read map data
 	m->dat = malloc(m->width * m->height * sizeof(Tmappos));
 	if (m->dat == NULL) {
-		fclose(fp);
+		SDL_RWclose(rw);
 		free(m);
 		return NULL;
 	}
 
-	if (fread(m->dat, sizeof(Tmappos), m->width * m->height, fp) != (size_t)m->width * m->height) {
-		fclose(fp);
+	if (SDL_RWread(rw, m->dat, sizeof(Tmappos), m->width * m->height) != (Sint64)m->width * m->height) {
+		SDL_RWclose(rw);
 		free(m->dat);
 		free(m);
 		return NULL;
 	}
 
-	// close file
-	fclose(fp);
+	return m;
+}
 
-	m->map_data_needs_to_be_destroyed = 1;
+// loads one splendind map from disk
+Tmap *load_map(const char *fname) {
+	// open file
+	SDL_RWops* rw = SDL_RWFromFile(fname, "rb");
+	if (rw == NULL) return NULL;
+
+	Tmap *m = load_map_from_RWops(rw);
+	if(!m) return NULL;
+
+	// close file
+	SDL_RWclose(rw);
 
 	return m;
 }
 
 // loads one splendind map from memory
-Tmap *load_map_from_memory(void *mem) {
-	Tmap *m;
-	unsigned char header[6];
-	unsigned char *c = (unsigned char *)mem;
-	
-	// does the header match?
-	//fread(header, 6, 1, fp);
-	memcpy(header, c, 6);
-	if (header[0] != 'A' && header[1] != 'X' && header[2] != '4' && header[3] != 'M' && header[4] != 'A' && header[5] != 'P') {
-		return NULL;
-		//fclose(fp);
-	}
-	c += 6;
-
-	// get memory
-	m = malloc(sizeof(Tmap));
-	if (m == NULL) {
-		//fclose(fp);
-		return NULL;
-	}
-	
-	// read datastruct
-	// a mapfile contain a raw dump of the Tmap struct made on an i386
-	// the code below reads these struct dumps in an arch neutral manner
-	// Note this dumps contains pointers, these are not used because these
-	// ofcourse point to some no longer valid address.
-	memcpy(m, c, 64); c += 64;             // first 64 bytes data
-	mem_to_int(&(m->width), c);  c += 4;
-	mem_to_int(&(m->height), c); c += 4;
-	c += 4;	                               // skip the first pointer
-	mem_to_int(&(m->offset_x), c); c += 4;
-	mem_to_int(&(m->offset_y), c); c += 4;
-	c += 4;                                // skip the second pointer
-	mem_to_int(&(m->start_x), c); c+= 4;
-	mem_to_int(&(m->start_y), c); c+= 4;
-
-	// read map data
-	m->dat = malloc(m->width * m->height * sizeof(Tmappos));
-	if (m->dat == NULL) {
-		free(m);
-		return NULL;
-	}
-
-	// fread(m->dat, sizeof(Tmappos), m->width * m->height, fp);
-	memcpy(m->dat, c, sizeof(Tmappos) * m->width * m->height);
-	c += sizeof(Tmappos) * m->width * m->height;
+Tmap *load_map_from_memory(int id) {
+	SDL_RWops* rw = SDL_RWFromConstMem(maps[id].dat, maps[id].size);
+	Tmap *m = load_map_from_RWops(rw);
+	if(!m) return NULL;
 
 	// close file
-	//fclose(fp);
+	SDL_RWclose(rw);
 
-	m->map_data_needs_to_be_destroyed = 0;
+	return m;
+}
+
+Tmap *load_scriptmap_from_memory(int id) {
+	SDL_RWops* rw = SDL_RWFromConstMem(scriptmaps[id].dat, scriptmaps[id].size);
+	Tmap *m = load_map_from_RWops(rw);
+	if(!m) return NULL;
+
+	// close file
+	SDL_RWclose(rw);
 
 	return m;
 }
 
 // saves a map to file
 int save_map(Tmap *m, char *fname) {
-	FILE *fp;
 	char header[6] = "AX4MAP";
 	
 	// open file
-	fp = fopen(fname, "wb");
-	if (fp == NULL) return FALSE;
+	SDL_RWops* rw = SDL_RWFromFile(fname, "wb");
+	if (rw == NULL) return false;
 
 	// write header
-	if (fwrite(header, 6, 1, fp) != 1) {
-		fclose(fp);
-		return FALSE;
+	if (SDL_RWwrite(rw, header, 6, 1) != 1) {
+		SDL_RWclose(rw);
+		return false;
 	}
+
+	Sint64 pos = SDL_RWtell(rw);
 
 	// write datastruct
 	// a mapfile should contain a raw dump of the Tmap struct as made on an
 	// i386 the code below writes a struct dump as an i386 in an arch
 	// neutral manner
-	if (fwrite(m, 64, 1, fp) +           // first 64 bytes data
-		fwrite_int(&(m->width), fp) +
-		fwrite_int(&(m->height), fp) +
-		fwrite(header, 4, 1, fp) +       // skip the first pointer
-		fwrite_int(&(m->offset_x), fp) +
-		fwrite_int(&(m->offset_y), fp) +
-		fwrite(header, 4, 1, fp) +       // skip the second pointer
-		fwrite_int(&(m->start_x), fp) +
-		fwrite_int(&(m->start_y), fp) != 9) {
-		fclose(fp);
-		return FALSE;
+	SDL_RWwrite(rw, m, 64, 1);      // first 64 bytes data
+	SDL_WriteLE32(rw, m->width);
+	SDL_WriteLE32(rw, m->height);
+	SDL_RWwrite(rw, "SKIP", 4, 1);  // skip the first pointer
+	SDL_WriteLE32(rw, m->offset_x);
+	SDL_WriteLE32(rw, m->offset_y);
+	SDL_RWwrite(rw, "SKIP", 4, 1);  // skip the second pointer
+	SDL_WriteLE32(rw, m->start_x);
+	SDL_WriteLE32(rw, m->start_y);
+	if(SDL_RWtell(rw) != pos + 96) {
+		SDL_RWclose(rw);
+		return false;
 	}
 
 	// write map data
-	if (fwrite(m->dat, sizeof(Tmappos), m->width * m->height, fp) != (size_t)m->width * m->height) {
-		fclose(fp);
-		return FALSE;
+	if (SDL_RWwrite(rw, m->dat, sizeof(Tmappos), m->width * m->height) != (Sint64)m->width * m->height) {
+		SDL_RWclose(rw);
+		return false;
 	}
 
 	// close file
-	fclose(fp);
+	SDL_RWclose(rw);
 	
-	return TRUE;
+	return true;
 }
 
 // frees the memory of a map
 void destroy_map(Tmap *m) {
 	if (m == NULL) return;
-	if (!m->map_data_needs_to_be_destroyed) return;
 
 	// free data
 	if (m->dat != NULL) free(m->dat);
@@ -297,7 +230,7 @@ void draw_map(BITMAP *bmp, Tmap *sm, int dx, int dy, int w, int h, int edit) {
 	
 	if (sm == NULL) return;
 	
-	set_clip_rect(bmp, dx, dy, dx+w-1, dy+h-1);
+	set_clip_rect(bmp, dx, dy, dx+w, dy+h);
 	
 	for(y=0;y<7;y++) {
 		for(x=0;x<11;x++) {
@@ -307,85 +240,86 @@ void draw_map(BITMAP *bmp, Tmap *sm, int dx, int dy, int w, int h, int edit) {
 				pos = tx + ty * sm->width;
 
 				if (sm->dat[pos].tile) {
-					draw_sprite(bmp, sm->data[sm->dat[pos].tile + TILE000 - 1].dat, dx + x*16 + ax, dy + y*16 + ay);
+					draw_tile(bmp, sm->dat[pos].tile - 1, dx + x*16 + ax, dy + y*16 + ay);
 				}
-
 
 				if (sm->dat[pos].item) {
 					if (sm->dat[pos].item == MAP_EGG) {
-						draw_sprite(bmp, sm->data[EGG].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_EGG], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					else if (sm->dat[pos].item == MAP_1UP) {
-						draw_sprite(bmp, sm->data[ONEUP].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_ONEUP], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					else if (sm->dat[pos].item == MAP_STAR) {
-						draw_sprite(bmp, sm->data[STAR].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_STAR], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					else if (sm->dat[pos].item == MAP_HEART) {
-						draw_sprite(bmp, sm->data[HEART].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_HEART], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					else if (sm->dat[pos].item == MAP_CHERRY) {
-						draw_sprite(bmp, sm->data[CHERRY].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_CHERRY], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					else if (sm->dat[pos].item == MAP_LOLA) {
-						draw_sprite(bmp, sm->data[LOLA].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_LOLA], dx + x*16 + ax, dy + y*16 + ay);
 					}
 				}
 				
 
 				if (sm->dat[pos].type) {
 					if (sm->dat[pos].type == MAP_SPIN) {
-						draw_sprite(bmp, sm->data[SPIN1 + ((ABS(game_count) >> 2) % 4)].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_SPIN1 + ((ABS(game_count) >> 2) % 4)], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					if (sm->dat[pos].type == MAP_WATER) {
-						blit(sm->data[WATER].dat, bmp, ((ABS(game_count) >> 2) % 4) << 4, 0, dx + x*16 + ax, dy + y*16 + ay, 16, 16);
+						blit(bitmaps[I_WATER], bmp, ((ABS(game_count) >> 2) % 4) << 4, 0, dx + x*16 + ax, dy + y*16 + ay, 16, 16);
 					}
 					if (sm->dat[pos].type == MAP_SURFACE) {
-						masked_blit(sm->data[WATER_SURFACE].dat, bmp, ((ABS(game_count) >> 2) % 8) << 4, 0, dx + x*16 + ax, dy + y*16 + ay, 16, 16);
+						masked_blit(bitmaps[I_WATER_SURFACE], bmp, ((ABS(game_count) >> 2) % 8) << 4, 0, dx + x*16 + ax, dy + y*16 + ay, 16, 16);
 					}
 				}
 
 				if (edit) {
 					if (sm->dat[pos].type == MAP_DEAD) {
-						textout_ex(bmp, font, "D", dx + x*16 + ax, dy + y*16 + ay, 0, -1);
+						textout_ex(bmp, "D", dx + x*16 + ax, dy + y*16 + ay, 0, -1);
 					}
 					if (sm->dat[pos].type == MAP_EXIT) {
-						textout_ex(bmp, font, "XT", dx + x*16 + ax, dy + y*16 + ay, 255, -1);
+						textout_ex(bmp, "XT", dx + x*16 + ax, dy + y*16 + ay, 255, -1);
 					}
 					if (sm->dat[pos].type == MAP_BRK) {
-						textout_ex(bmp, font, "GL", dx + x*16 + ax, dy + y*16 + ay, 255, -1);
+						textout_ex(bmp, "GL", dx + x*16 + ax, dy + y*16 + ay, 255, -1);
 					}
 					if (sm->dat[pos].type == MAP_ENEMY1) {
-						draw_sprite(bmp, sm->data[ENEMY1_01 + ((ABS(game_count) >> 3) % 4)].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_ENEMY1_01 + ((ABS(game_count) >> 3) % 4)], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					if (sm->dat[pos].type == MAP_ENEMY2) {
-						draw_sprite(bmp, sm->data[ENEMY2_01 + ((ABS(game_count) >> 3) % 4)].dat, dx + x*16 + ax, dy + y*16 + ay - 8);
+						draw_sprite(bmp, bitmaps[I_ENEMY2_01 + ((ABS(game_count) >> 3) % 4)], dx + x*16 + ax, dy + y*16 + ay - 8);
 					}
 					if (sm->dat[pos].type == MAP_ENEMY3) {
-						draw_sprite(bmp, sm->data[ENEMY3].dat, dx + x*16 + ax, dy + y*16 + ay - 96);
+						draw_sprite(bmp, bitmaps[I_ENEMY3], dx + x*16 + ax, dy + y*16 + ay - 96);
 					}
 					if (sm->dat[pos].type == MAP_ENEMY4) {
-						draw_sprite(bmp, sm->data[ENEMY4].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_ENEMY4], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					if (sm->dat[pos].type == MAP_ENEMY5) {
-						draw_sprite(bmp, sm->data[ENEMY5_01].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_ENEMY5_01], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					if (sm->dat[pos].type == MAP_ENEMY6) {
-						draw_sprite(bmp, sm->data[ENEMY6].dat, dx + x*16 + ax, dy + y*16 + ay);
+						draw_sprite(bmp, bitmaps[I_ENEMY6], dx + x*16 + ax, dy + y*16 + ay);
 					}
 					if (sm->dat[pos].type == MAP_GUARD1) {
-						draw_sprite(bmp, sm->data[GUARD1_1].dat, dx + x*16 + ax, dy + y*16 + ay - 16);
+						draw_sprite(bmp, bitmaps[I_GUARD1_1], dx + x*16 + ax, dy + y*16 + ay - 16);
 					}
 					if (sm->dat[pos].type == MAP_GUARD2) {
-						draw_sprite(bmp, sm->data[GUARD2_1a].dat, dx + x*16 + ax, dy + y*16 + ay - 32);
+						draw_sprite(bmp, bitmaps[I_GUARD2_1A], dx + x*16 + ax, dy + y*16 + ay - 32);
 					}
 				}
+#ifdef SHOW_TILES
+				if(sm->dat[pos].tile) textprintf_centre_ex(bmp, dx + x*16 + ax + 8, dy + y*16 + ay + 4, 5, -1, "%d", sm->dat[pos].tile);
+#endif
 			}
 		}
 	}
 
-	set_clip_rect(bmp, 0, 0, SCREEN_W - 1, SCREEN_H - 1);
-	
+	reset_clip_rect(bmp);	
 }
 
 // gets a pointer to the mappos at tx, ty
