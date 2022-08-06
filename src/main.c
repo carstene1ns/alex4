@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -17,13 +17,14 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
  
-#define _XOPEN_SOURCE	700
+#define _XOPEN_SOURCE 700 // for strdup
  
-#include <allegro.h>
-#include <aldumb.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <libgen.h>
+#include "alex4.h"
+#include "sdl_port.h"
+#include "hisc.h"
 #include "timer.h"
 #include "map.h"
 #include "control.h"
@@ -36,11 +37,17 @@
 #include "hisc.h"
 #include "script.h"
 #include "main.h"
+#include "misc.h"
+#include "sound.h"
+#ifdef ENABLE_EDITOR
 #include "edit.h"
+#endif
+#ifdef ENABLE_SHOOTER
 #include "shooter.h"
+#endif
 #include "unix.h"
 
-#include "../data/data.h"
+#include "data.h"
 
 // some game status defines
 #define GS_OK				1
@@ -57,14 +64,12 @@
 int game_status = 0;
 
 // globalez
-DATAFILE *data = NULL;
-DATAFILE *maps = NULL;
-DATAFILE *sfx_data = NULL;
 BITMAP *swap_screen;
-PALETTE org_pal;
 Tscroller hscroll;
 Thisc *hisc_table;
+#ifdef ENABLE_SHOOTER
 Thisc *hisc_table_space;
+#endif
 
 // the map
 Tmap *map = NULL;
@@ -78,42 +83,12 @@ Tactor actor[MAX_ACTORS];
 // edit
 int editing = 0;
 
-// music and stuff
-#ifdef ALEX_NEW_DUMB
-static DUMBFILE *dmbf = NULL;
-#endif
-static AL_DUH_PLAYER *dp = NULL;
-static DUH_SIGRENDERER *sr = NULL;
-static DUH *duh = NULL;
-
-// mod start patterns
-#define MOD_INTRO_SONG		 0x00
-#define MOD_MENU_SONG		 0x08
-#define MOD_BOSS_SONG		 0x0c
-#define MOD_OUTRO_SONG		 0x11
-#define MOD_PLAYER_DIES		 0x1a
-#define MOD_LEVEL_DONE		 0x1b
-#define MOD_GAME_OVER		 0x1c
-#define MOD_LEVEL_SONG		 0x1d
-
-// sound fx
-#define MAX_SOUNDS		32
-SAMPLE *sfx[MAX_SOUNDS] = { NULL, NULL, NULL, NULL,
-							NULL, NULL, NULL, NULL,
-							NULL, NULL, NULL, NULL,
-							NULL, NULL, NULL, NULL,
-							NULL, NULL, NULL, NULL,
-							NULL, NULL, NULL, NULL,
-							NULL, NULL, NULL, NULL,
-							NULL, NULL, NULL, NULL };
-
 // various
 char scroller_message[] = 
 	"Free Lunch Design      presents      Alex the Allegator 4      "
 	"Guide Alex to the exit of each level      Jump or shoot enemies picking up stars and cherries on the way      "
 	"Use arrows to move Alex, ALT to jump and Left CTRL to shoot, or use a gamepad or joystick      "
-	"Code and GFX by Johan Peitz      Music and SFX by Anders Svensson       ";
-char init_string[] = "[YhJPJKUSY`0-'\"7 ";
+	"Code and GFX by Johan Peitz      Music and SFX by Anders Svensson      SDL2 port by carstene1ns       ";
 
 char *level_files[256];
 int num_levels;
@@ -123,270 +98,35 @@ int menu_choice = 1;
 int playing_original_game = 1;
 int init_ok = 0;
 
-static FILE* log_fp = NULL;
+FILE* log_fp = NULL;
 
 // // // // // // // // // // // // // // // // // // // // // 
 
 // returns pointer to the game over bitmap
 BITMAP *get_gameover_sign() {
-	return data[GAME_OVER].dat;
+	return bitmaps[I_GAME_OVER];
 }
 
 // returns pointer to the lets go bitmap
 BITMAP *get_letsgo_sign() {
-	return data[LETSGO].dat;
+	return bitmaps[I_LETSGO];
 }
 
+#ifdef ENABLE_SHOOTER
 // returns pointer to the space highscore table
 Thisc *get_space_hisc() {
 	return hisc_table_space;
 }
-
-// returns the init_string
-char *get_init_string() {
-	return init_string;
-}
-
-// loggs the text to the text file
-void log2file(const char *format, ...) {
-	va_list ptr; /* get an arg pointer */
-	
-	if (log_fp) {
-		/* initialize ptr to point to the first argument after the format string */
-		va_start(ptr, format);
- 
-		/* Write to logfile. */
-		vfprintf(log_fp, format, ptr); // Write passed text.
-		fprintf(log_fp, "\n"); // New line..
- 
-		va_end(ptr);
- 
-		fflush(log_fp);
-	}
-
-}
-
-// saves a screenshot
-void take_screenshot(BITMAP *bmp) { 
-	static int number = 0;
-	PALETTE p;
-	BITMAP *b;
-	char buf[256];
-	int ok = 0;
-
-	// check if the file name allready exists
-	do {
-		sprintf(buf, "a4_%03d.pcx", number ++);
-		if (!exists(buf)) ok = 1;
-		if (number > 999) return;
-	} while(!ok);
-
-	get_palette(p);
-
-	b = create_sub_bitmap(bmp, 0, 0, bmp->w, bmp->h);
-	save_bitmap(buf, b, p);
-	destroy_bitmap(b);
-
-}
-
-// garbles a string using a key
-void garble_string(char *str, int key) {
-	int i;
-	int len_i = strlen(str);
-	for(i = 0; i < len_i; i ++) {
-		str[i] ^= (key+i);
-	}
-}
+#endif
 
 // sets the current map
 void set_map(Tmap *m) {
 	map = m;
 }
 
-// plays a sample using default settings
-void play_sound(SAMPLE *s) {
-	if (got_sound && s != NULL) play_sample(s, get_config_int("sound", "sample_volume", 100), 128, 1000, 0); 
-}
-
-// plays a sample using default settings
-// (from an index)
-void play_sound_id(int id) {
-	if (got_sound) play_sound(sfx[id]);
-}
-
-// plays a sample using user settings
-void play_sound_ex(SAMPLE *s, int vol, int freq, int loop) {
-	if (got_sound && s != NULL) {
-		int v = (get_config_int("sound", "sample_volume", 100) * (float)(vol))/100.0;
-		play_sample(s, v, 128, freq, loop); 
-	}
-}
-
-// plays a sample using user settings
-// (from an index)
-void play_sound_id_ex(int id, int vol, int freq, int loop) {
-	play_sound_ex(sfx[id], vol, freq, loop);
-}
-
-// stops a sample (providing an id)
-void stop_sound_id(int id) {
-	stop_sample(sfx[id]);
-}
-
-// adjusts a sample (from an index) according to player position
-void adjust_sound_id_ex(int id, int x) {
-	if (got_sound) {
-		int vol = MAX(100 - ABS(player.actor->x - x) / 2, 0);
-		int v = get_config_int("sound", "sample_volume", 100) * (float)(vol)/100.0;
-		int pan = MID(0, 128 + x - player.actor->x, 255);
-		if (sfx[id] != NULL) {
-			adjust_sample(sfx[id], v, pan, 1000, 1);
-		}
-	}
-}
-
-// shows a little message
-void msg_box(const char *str) {
-	if (got_sound) al_pause_duh(dp);
-	alert("Alex 4: Message", NULL, str, "OK", NULL, 0, 0);
-	if (got_sound) al_resume_duh(dp);
-}
-
-// polls the music
-void poll_music() {
-	if (got_sound && dp != NULL) al_poll_duh(dp);
-}
-
-// waits for user to strike a key, or x seconds
-void wait_key(int seconds) {
-	int t = 0;
-	int kp = 0;
-
-	clear_keybuf();
-	cycle_count = 0;
-	while(!kp && t < seconds * 50) {
-		cycle_count = 0;
-		poll_control(&ctrl);
-		t ++;
-		if (keypressed()) kp = 1;
-		if (is_fire(&ctrl) || is_jump(&ctrl)) kp = 1;
-		if (got_sound && dp != NULL) al_poll_duh(dp);
-		rest(20);
-	}
-}
-
 // returns the player actor
 Tactor *get_alex() {
 	return &actor[0];
-}
-
-// stops any mod playing
-static void stop_music(void) {
-	al_stop_duh(dp);
-	dp = NULL;
-}
-
-// starts the mod at position x
-static void start_music(int startorder) {
-	const int n_channels = 2; /* stereo */
-
-	stop_music();
-
-	{
-		sr = dumb_it_start_at_order(duh, n_channels, startorder);
-		dp = al_duh_encapsulate_sigrenderer(sr,
-			((get_config_int("sound", "music_volume", 255) * 1.0) / 255.0),
-			get_config_int("dumb", "buffer_size", 4096),
-			get_config_int("dumb", "sound_freq", 44100));
-		if (!dp) duh_end_sigrenderer(sr); // howto.txt doesn't mention that this is necessary! dumb.txt does ...
-	}
-}
-
-// delay routine used by the fades
-void fade_rest(int msec, AL_DUH_PLAYER *duh_player) {
-	int i = 0;
-
-	while(i < msec / 20) {
-		cycle_count = 0;
-		if (got_sound && duh_player != NULL) al_poll_duh(duh_player);
-		i ++;
-		while(!cycle_count)
-			rest(1);
-	}
-}
-
-// fades in from white to 4 color palette
-void fade_in_pal(int delay) {
-	set_color(1, &org_pal[3]);	
-	fade_rest(delay, dp);
-
-	set_color(1, &org_pal[2]);	
-	set_color(2, &org_pal[3]);	
-	fade_rest(delay, dp);
-
-	set_color(1, &org_pal[1]);	
-	set_color(2, &org_pal[2]);	
-	set_color(3, &org_pal[3]);	
-	fade_rest(delay, dp);
-}
-
-// fades 4 color palette to white
-void fade_out_pal(int delay) {
-	set_color(1, &org_pal[2]);	
-	set_color(2, &org_pal[3]);	
-	set_color(3, &org_pal[4]);	
-	fade_rest(delay, dp);
-	set_color(1, &org_pal[3]);	
-	set_color(2, &org_pal[4]);	
-	fade_rest(delay, dp);
-	set_color(1, &org_pal[4]);	
-	fade_rest(delay, dp);
-}
-
-// fade in from black to 4 colors pal
-void fade_in_pal_black(int delay, AL_DUH_PLAYER *duh_player) {
-	set_color(4, &org_pal[2]);	
-	fade_rest(delay, duh_player);
-
-	set_color(3, &org_pal[2]);	
-	set_color(4, &org_pal[3]);	
-	fade_rest(delay, duh_player);
-
-	set_color(2, &org_pal[2]);	
-	set_color(3, &org_pal[3]);	
-	set_color(4, &org_pal[4]);	
-	fade_rest(delay, duh_player);
-}
-
-// fades 4 color palette to black
-void fade_out_pal_black(int delay, AL_DUH_PLAYER *duh_player) {
-	set_color(2, &org_pal[1]);	
-	set_color(3, &org_pal[2]);	
-	set_color(4, &org_pal[3]);	
-	fade_rest(delay, duh_player);
-	set_color(3, &org_pal[1]);	
-	set_color(4, &org_pal[2]);	
-	fade_rest(delay, duh_player);
-	set_color(4, &org_pal[1]);	
-	fade_rest(delay, duh_player);
-}
-
-// ets all color to white
-void wipe_pal() {
-	set_color(1, &org_pal[4]);	
-	set_color(2, &org_pal[4]);	
-	set_color(3, &org_pal[4]);	
-	set_color(4, &org_pal[4]);	
-}
-
-// removes trailing white space from a null terminated string
-void clear_trailing_whitespace(char *data) {
-	unsigned int i;
-
-	for(i = 0; i < strlen(data); i++) {
-		if (data[i] == ' ' || data[i] == '\t' || data[i] == '\n' || data[i] == '\r')
-			data[i] = 0;
-	}
 }
 
 /// load the level filenames
@@ -395,10 +135,11 @@ void load_level_files(const char *filename) {
 	char buf[1024];
 	int mode = 0;
 	char *ret;
-	char path[1024];
+	char *path;
 	
 	// get path to maps
-	replace_filename(path, filename, "", 1024);
+	path = strdup(filename);
+	path = dirname(path);
 
 	// reset counters
 	num_levels = 0;
@@ -406,7 +147,7 @@ void load_level_files(const char *filename) {
 	// open level file
 	fp = fopen(filename, "rt");
 	if (!fp) {
-		allegro_message("%s not found", filename);
+		printf("%s not found\n", filename);
 		log2file("  *** %s not found", filename);
 		return;
 	}
@@ -422,7 +163,7 @@ void load_level_files(const char *filename) {
 	}
 	if (!mode) {
 		mode = 2;
-		allegro_message("#start# not found");
+		printf("#start# not found\n");
 		log2file("  *** #start# not found");
 	}
 		
@@ -445,7 +186,7 @@ void load_level_files(const char *filename) {
 				log2file("  <%s> found", buf);
 			}
 			else {
-				allegro_message("ALEX4:\n<%s> not found - skipping", level_files[num_levels]);
+				printf("ALEX4:\n<%s> not found - skipping\n", level_files[num_levels]);
 				log2file("  *** <%s> not found - skipping", level_files[num_levels]);
 			}
 		}
@@ -453,35 +194,29 @@ void load_level_files(const char *filename) {
 		ret = fgets(buf, 1024, fp);  // read a line
 	}
 
+	free(path);
+
 	// close file
 	fclose(fp);
 
 	return;
 }
 
-// blits anything to screen
-void blit_to_screen(BITMAP *bmp) {
-	acquire_screen();
-	if (options.use_vsync) vsync();
-	stretch_blit(bmp, screen, 0, 0, bmp->w, bmp->h, 0, 0, SCREEN_W, SCREEN_H);
-	release_screen();
-}
-
 // draws the status bar
 void draw_status_bar(BITMAP *bmp, int y) {
 	int i;
 
-	rectfill(bmp, 0, y, 159, y+9, 1);
-	draw_sprite_h_flip(bmp, data[HERO_NORM].dat, 0, y+1); 
-	textprintf_ex(bmp, data[THE_FONT].dat, 9, y+1, 4, -1, " :%d", player.lives);
+	rectfill(bmp, 0, y, 160, y+10, 1);
+	draw_sprite_h_flip(bmp, bitmaps[I_HERO_NORM], 0, y+1); 
+	textprintf_ex(bmp, 9, y+1, 4, -1, " :%d", player.lives);
 
 	for(i = 0; i < player.health; i ++)
-		draw_sprite(bmp, data[HEART2].dat, 40 + 10 * i, y-3);
+		draw_sprite(bmp, bitmaps[I_HEART2], 40 + 10 * i, y-3);
 
-	draw_sprite(bmp, data[EGG].dat, 80, y-5); 
-	textprintf_ex(bmp, data[THE_FONT].dat, 85, y+1, 4, -1, " :%d", player.ammo);
+	draw_sprite(bmp, bitmaps[I_EGG], 80, y-5); 
+	textprintf_ex(bmp, 85, y+1, 4, -1, " :%d", player.ammo);
 
-	textprintf_right_ex(bmp, data[THE_FONT].dat, 158, y+1, 4, -1, "%d", player.score);
+	textprintf_right_ex(bmp, 158, y+1, 4, -1, "%d", player.score);
 }
 
 // draws a frame of the action
@@ -496,12 +231,14 @@ void draw_frame(BITMAP *bmp, int _status_bar) {
 	x2 = (-ox % 320) >> 1;
 
 	// draw backgrounds
-	blit(data[BG0].dat, bmp, 0, 0, x0, 0, 160, 120);
-	blit(data[BG0].dat, bmp, 0, 0, x0 + 160, 0, 160, 120);
-	draw_sprite(bmp, data[BG1].dat, x1, 120 - ((BITMAP *)data[BG1].dat)->h);
-	draw_sprite(bmp, data[BG1].dat, x1 + 160, 120 - ((BITMAP *)data[BG1].dat)->h);
-	draw_sprite(bmp, data[BG2].dat, x2, 120 - ((BITMAP *)data[BG2].dat)->h);
-	draw_sprite(bmp, data[BG2].dat, x2 + 160, 120 - ((BITMAP *)data[BG2].dat)->h);
+	//blit(bitmaps[I_BG0], bmp, 0, 0, x0, 0, 160, 120);
+	//blit(bitmaps[I_BG0], bmp, 0, 0, x0 + 160, 0, 160, 120);
+	draw_sprite(bmp, bitmaps[I_BG0], x0, 0);
+	draw_sprite(bmp, bitmaps[I_BG0], x0 + 160, 0);
+	draw_sprite(bmp, bitmaps[I_BG1], x1, 120 - bitmaps[I_BG1]->h);
+	draw_sprite(bmp, bitmaps[I_BG1], x1 + 160, 120 - bitmaps[I_BG1]->h);
+	draw_sprite(bmp, bitmaps[I_BG2], x2, 120 - bitmaps[I_BG2]->h);
+	draw_sprite(bmp, bitmaps[I_BG2], x2 + 160, 120 - bitmaps[I_BG2]->h);
 
 	// draw frame
 	draw_map(bmp, map, 0, 0, 160, 120, editing);
@@ -532,250 +269,162 @@ void draw_frame(BITMAP *bmp, int _status_bar) {
 		else rectfill(bmp, 0, 110, 159, 119, 1);
 
 	}
+#if ENABLE_EDITOR
 	else { 		/////////////// EDIT stats
-		int mx = mouse_x / (SCREEN_W / 160);
-		int my = mouse_y / (SCREEN_H / 120);
+		int mx = GetMouseX() / (GetScreenW() / 160);
+		int my = GetMouseY() / (GetScreenH() / 120);
 		draw_edit_mode(bmp, map, mx, my);
 	}
-}
-
-// loads a sample from disk
-SAMPLE *load_path_sample(const char *fname) {
-	char buf[1024];
-	SAMPLE *s;
-	sprintf(buf, "%s/%s", get_config_string("sound", "sfx_path", "sfx"), fname);
-	s = load_sample(buf);
-	if (s == NULL) {
-		sprintf(buf, "not found: %s/%s", get_config_string("sound", "sfx_path", "sfx"), fname);
-		log2file(" *** %s", buf);
-		msg_box(buf);
-	}
-	return s;
-}
-
-// counts number of maps
-// invoked when loading the map datafile
-void count_maps_callback(DATAFILE *d) {
-	(void) d; /* unused */
-	num_levels ++;
+#endif
 }
 
 // invoked when game looses focus
 void display_switch_out(void) {
 	if (got_sound) {
-		al_pause_duh(dp);
+		pause_music(true);
 		rest(100);
 	}
 }
 
 // invoked when game regains focus
 void display_switch_in(void) {
-	if (got_sound) al_resume_duh(dp);
-}
-
-// sets up the gui colors
-void fix_gui_colors() {
-	((RGB *)data[0].dat)[255].r = 0;
-	((RGB *)data[0].dat)[255].g = 0;
-	((RGB *)data[0].dat)[255].b = 0;
-	((RGB *)data[0].dat)[254].r = 63;
-	((RGB *)data[0].dat)[254].g = 63;
-	((RGB *)data[0].dat)[254].b = 63;
-	gui_fg_color = 255;
-	gui_bg_color = 254;
+	pause_music(false);
 }
 
 // init the game
 int init_game(const char *map_file) {
-	PACKFILE *pf;
-	BITMAP *bmp;
 	int i;
-	int w, h;
-#ifdef __unix__
 	char filename[512];
-	char *homedir = get_homedir();
-#endif
 
 	log2file("\nInit routines:");
 
-	// various allegro things
-	log2file(" initializing allegro");
-	garble_string(init_string, 53);
+	// load options
+	log2file(" loading options");
+	reset_options(&options);
 #ifdef __unix__
-	snprintf(filename, sizeof(filename), "%s/.alex4/alex4.ini",
+	char *homedir = get_homedir();
+	snprintf(filename, sizeof(filename), "%s/.alex4/config",
 		homedir? homedir:".");
-	override_config_file(filename);
 #else
-	set_config_file("alex4.ini");
+	strcpy(filename, "config.ini");
 #endif
+	if(!load_options(&options, filename))
+		log2file("  *** failed, using defaults");
 	
 	// install timers
 	log2file(" installing timers");
 	install_timers();
-
-	// set color depth to 8bpp
-	log2file(" setting color depth (8)");
-	set_color_depth(8);
 	
+	// init gfx
+	log2file(" entering gfx mode set in config (%dx%d %s)",
+		options.width, options.height, options.fullscreen ? "full" : "win");
+	make_sdl_window(&options);
+
+	// set win title (no! really???)
+	log2file(" setting window title");
+	set_window_title("loading...");
+
 	// allocating memory 
 	log2file(" allocating memory for off screen buffers");
 	swap_screen = create_bitmap(160, 120);
 	if (swap_screen == NULL) {
 		log2file("  *** failed");
-		allegro_message("ALEX4:\nFailed to allocate memory for swap screen.");
-		return FALSE;
+		printf("ALEX4:\nFailed to allocate memory for swap screen.\n");
+		return false;
 	}
 
-	log2file(" allocating memory for high score table 1");
+	log2file(" allocating memory for high score table(s)");
 	hisc_table = make_hisc_table();
 	if (hisc_table == NULL) {
 		log2file("  *** failed");
-		allegro_message("ALEX4:\nFailed to allocate memory for high score list.");
-		return FALSE;
+		printf("ALEX4:\nFailed to allocate memory for high score list.\n");
+		return false;
 	}
 
-	log2file(" allocating memory for high score table 2");
+#ifdef ENABLE_SHOOTER
 	hisc_table_space = make_hisc_table();
 	if (hisc_table_space == NULL) {
 		log2file("  *** failed");
-		allegro_message("ALEX4:\nFailed to allocate memory for high score list.");
-		return FALSE;
+		printf("ALEX4:\nFailed to allocate memory for high score list.\n");
+		return false;
 	}
-
-	// init gfx
-	if (get_config_int("graphics", "fullscreen", 0)) {
-		w = get_config_int("graphics", "f_width", 640);
-		h = get_config_int("graphics", "f_height", 480);
-	}
-	else {
-		w = get_config_int("graphics", "w_width", 640);
-		h = get_config_int("graphics", "w_height", 480);
-	}
-
-	log2file(" entering gfx mode set in alex4.ini (%dx%d %s)", w, h, (get_config_int("graphics", "fullscreen", 0) ? "full" : "win"));
-
-	if (set_gfx_mode(
-		(get_config_int("graphics", "fullscreen", 0) ? GFX_AUTODETECT_FULLSCREEN : GFX_AUTODETECT_WINDOWED),
-		w, h, 0, 0)) {
-		log2file("  *** failed");
-		log2file(" entering gfx mode (640x480 windowed)");
-		if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, 640, 480, 0, 0)) {
-			log2file("  *** failed");
-			log2file(" entering gfx mode (640x480 fullscreen)");
-			if (set_gfx_mode(GFX_AUTODETECT_FULLSCREEN, 640, 480, 0, 0)) {
-				log2file("  *** failed");
-				allegro_message("ALEX4:\nFailed to enter gfx mode.\nTry setting a custom resolution in alex4.ini.");
-				return FALSE;
-			}
-		}
-	}
+#endif
 
 	// show initial loading screen
-	clear(swap_screen);
-	textout_centre_ex(swap_screen, font, "loading...", 320, 200, 1, -1);
+	clear_bitmap(swap_screen);
+	textout_centre_ex(swap_screen, "loading...", 320, 200, 1, -1);
 	blit_to_screen(swap_screen);
-
-#ifndef __unix__
-	// set switch modes and callbacks
-	if (set_display_switch_mode(SWITCH_PAUSE) < 0)
-		log2file("  * display switch mode failed");
-	if (set_display_switch_callback(SWITCH_IN, display_switch_in) < 0)
-		log2file("  * display switch in failed");
-	if (set_display_switch_callback(SWITCH_OUT, display_switch_out) < 0)
-		log2file("  * display switch out failed");
-#endif
-
-	// set win title (no! really???)
-	log2file(" setting window title");
-	set_window_title("Alex 4");
-
-	// register dumb
-	log2file(" registering dumb");
-#ifndef ALEX_NEW_DUMB
-	dumb_register_packfiles();
-	dumb_register_dat_mod(DUMB_DAT_MOD);
-#endif
-	dumb_resampling_quality = get_config_int("dumb", "dumb_resampling_quality", 4);
-	dumb_it_max_to_mix = get_config_int("dumb", "dumb_it_max_to_mix", 128);
 
 	// load data
 	log2file(" loading data");
-	packfile_password(init_string);
-	data = load_datafile(DATADIR "data.dat");
-	packfile_password(NULL);
-	if (data == NULL) {
+	if (!exists(DATADIR "/data.zip")) {
 		log2file("  *** failed");
-		allegro_message("ALEX4:\nFailed to load data.");
-		return FALSE;
+		printf("ALEX4:\n data file %s not found.\n", DATADIR "/data.zip");
+		return false;
+	}
+	if (!load_datafile(DATADIR "/data.zip")) {
+		log2file("  *** failed");
+		printf("ALEX4:\nFailed to load data.\n");
+		return false;
 	}
 
-	// load options
-	log2file(" loading options");
-#ifdef __unix__
-	snprintf(filename, sizeof(filename), "%s/.alex4/alex4.sav",
-		homedir? homedir:".");
-	pf = pack_fopen(filename, "rp");
-#else
-	pf = pack_fopen("alex4.sav", "rp");
-#endif
-	if (pf) {
-		load_options(&options, pf);
-		pack_fclose(pf);
-	}
-	else { 
-		log2file("  *** failed, resetting to defaults");
-		reset_options(&options);
-	}
+	// font
+	prepare_font(F_GAME);
 
 	// loading highscores
+	bool high_ok = true;
 	log2file(" loading hiscores");
 #ifdef __unix__
-	snprintf(filename, sizeof(filename), "%s/.alex4/alex4.hi",
+	snprintf(filename, sizeof(filename), "%s/.alex4/highscore",
 		homedir? homedir:".");
-	pf = pack_fopen(filename, "rp");
 #else
-	pf = pack_fopen("alex4.hi", "rp");
+	strcpy(filename, "highscore.dat");
 #endif
-	if (pf) {
-		load_hisc_table(hisc_table, pf);
-		load_hisc_table(hisc_table_space, pf);
-		pack_fclose(pf);
+	if (!exists(filename)) high_ok = false;
+	if(high_ok)
+		high_ok = load_hisc_table(hisc_table, filename);
+
+#ifdef ENABLE_SHOOTER
+	if(high_ok) {
+#ifdef __unix__
+		strcat(filename, "-shooter")
+#else
+		strcpy(filename, "highscore-shooter.dat");
+#endif
+		high_ok = load_hisc_table(hisc_table_space, filename);
 	}
-	else {
+#endif
+
+	if(!high_ok) {
 		log2file("  *** failed, resetting");
 		reset_hisc_table(hisc_table, "alex", 25000, 5000);
 		sort_hisc_table(hisc_table);
+#ifdef ENABLE_SHOOTER
 		reset_hisc_table(hisc_table_space, "Lola", 3000000, 600000);
 		sort_hisc_table(hisc_table_space);
+#endif
 	}
-
-	// fix some palette entries
-	((RGB *)data[0].dat)[0].r = 0;
-	((RGB *)data[0].dat)[0].g = 0;
-	((RGB *)data[0].dat)[0].b = 0;
-	fix_gui_colors();
-	set_palette(data[0].dat);
 
 	// show splash screen
 	clear_to_color(swap_screen, 3);
 
-	bmp = data[FLD_LOGO].dat;
-	draw_character_ex(swap_screen, bmp, 80 - bmp->w / 2 + 0, 50 + 1, 1, -1);
-	draw_character_ex(swap_screen, bmp, 80 - bmp->w / 2, 50, 4, -1);
+	BITMAP *bmp = bitmaps[I_FLD_LOGO];
+	draw_character_ex(swap_screen, bmp, 80 - bmp->w / 2 + 0, 50 + 1, 1);
+	draw_character_ex(swap_screen, bmp, 80 - bmp->w / 2, 50, 4);
 	
 	blit_to_screen(swap_screen);
+	// show a bit
+	//rest(400);
 
 	// load maps
 	if (playing_original_game) {
-		log2file(" loading original maps");
-		packfile_password(init_string);
-		num_levels = -1;  // skip end object when counting
-		maps = load_datafile_callback(DATADIR "maps.dat", count_maps_callback);
-		packfile_password(NULL);
-		if (maps == NULL) {
+		log2file(" using original maps");
+		num_levels = MAP_MAX;
+
+		if (!maps) {
 			log2file("  *** failed");
-			allegro_message("ALEX4:\nFailed to load original maps.");
-			return FALSE;
+			printf("ALEX4:\nFailed to load original maps.\n");
+			return false;
 		}
 		log2file(" loaded %d maps", num_levels);
 	}
@@ -788,203 +437,63 @@ int init_game(const char *map_file) {
 			log2file("  %d maps loaded", num_levels);
 			if (num_levels == 0) {
 				log2file("  *** no maps were loaded");
-				allegro_message("ALEX4:\nCustom map file must\nhold at least one\nlegal map file.");
-				return FALSE;
+				printf("ALEX4:\nCustom map file must\nhold at least one\nlegal map file.\n");
+				return false;
 			}
 		}
 		else {
 			log2file("  *** file not found: %s", map_file);
-			allegro_message("ALEX4:\nCustom map file not found:\n%s", map_file);
-			return FALSE;
+			printf("ALEX4:\nCustom map file not found:\n%s\n", map_file);
+			return false;
 		}		
 	}
 
-	// install some parts of allegro
-	log2file(" installing keyboard");
-	install_keyboard();
-	log2file(" installing mouse");
-	install_mouse();
-
-	// fix palette
-	for(i = 0; i < 256; i ++) {
-		org_pal[i].r = ((RGB *)data[0].dat)[i].r;
-		org_pal[i].g = ((RGB *)data[0].dat)[i].g;
-		org_pal[i].b = ((RGB *)data[0].dat)[i].b;
-	}
-
 	// init control
-	log2file(" initializing controls");
+	log2file(" initializing controls and joystick/gamepad");
 	init_control(&ctrl);
-
-	// initializing joystick
-	log2file(" initializing joystick/gamepad");
-	if (install_joystick(JOY_TYPE_AUTODETECT)) {
-		log2file("  *** failed");
-	}
-	else {
-		ctrl.use_joy = 1;
-	}
+	update_sdl_keyboard();
 
 	// install sound
-	log2file(" installing sound");
-	set_volume_per_voice(0);
-	switch(get_config_int("sound", "sound_device", 1)) {
-		case 1:
-			i = DIGI_AUTODETECT;
-			log2file("  DIGI_AUTODETECT selected (%d)", i);
-			break;
-#ifdef ALLEGRO_WINDOWS
-		case 2:
-			i = DIGI_DIRECTX(0);
-			log2file("  DIGI_DIRECTX(0) selected (%d)", i);
-			break;
-		case 3:
-			i = DIGI_DIRECTAMX(0);
-			log2file("  DIGI_DIRECTAMX(0) selected (%d)", i);
-			break;
-#elif defined(ALLEGRO_UNIX)
-#ifdef DIGI_OSS
-		case 2:
-			i = DIGI_OSS;
-			log2file("  DIGI_OSS selected (%d)", i);
-			break;
-#endif
-#ifdef DIGI_ALSA
-		case 3:
-			i = DIGI_ALSA;
-			log2file("  DIGI_ALSA selected (%d)", i);
-			break;
-#endif
-#endif
-		default:
-			i = -770405;	// dummy number
-			got_sound = 0;
-			log2file("  NO_SOUND selected");
-			break;
-	}
-	if (i != -770405) {
-		if (install_sound(i, MIDI_NONE, NULL)) {
-			log2file("  *** failed");
-			got_sound = 0;
-		}
-		else got_sound = 1;
-	}
-
-	if (got_sound) {
-		int s = 0;
-
-		// load music
-#ifdef ALEX_NEW_DUMB
-		dmbf = dumbfile_open_memory(data[MSC_GAME].dat, data[MSC_GAME].size);
-		duh = dumb_read_mod(dmbf, 0);
+	log2file(" installing sound/music");
+#ifdef NO_SOUND
+	log2file("  *** disabled");
+	got_sound = 0;
 #else
-		duh = (DUH *)data[MSC_GAME].dat;
-#endif
+	Mix_Init(MIX_INIT_MOD);
+	if(Mix_OpenAudio(options.sound_freq, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, options.buffer_size) != 0) {
+		log2file("  *** failed");
+		got_sound = 0;
+	} else {
+		Mix_AllocateChannels(16);
+		got_sound = 1;
 
-		if (get_config_int("sound", "use_sound_datafile", 1)) {
-			log2file(" loading sound datafile");
-			packfile_password(init_string);
-			sfx_data = load_datafile(DATADIR "sfx_44.dat");
-			if (sfx_data == NULL) {
-				sfx_data = load_datafile(DATADIR "sfx_22.dat");
-				log2file("  sfx_44.dat not found");
-				s = 0;
-			}
-			else {
-				s = 1;
-				log2file("  sfx_44.dat will be used");
-			}
-			packfile_password(NULL);
-			if (sfx_data == NULL) {
-				log2file("  sfx_22.dat not found");
-				log2file("  *** failed - no sfx will be available");
-			}
-			else {
-				if (!s) log2file("  sfx_22.dat will be used");
+		load_sfx();
+		load_music(MSC_GAME);
 
-				// assign samples
-				sfx[SMPL_CHERRY]	 = sfx_data[0].dat;
-				sfx[SMPL_CHOPPER]	 = sfx_data[1].dat;
-				sfx[SMPL_CRUSH]		 = sfx_data[2].dat;
-				sfx[SMPL_A_DIE]		 = sfx_data[3].dat;
-				sfx[SMPL_EAT]		 = sfx_data[4].dat;
-				sfx[SMPL_BEAM]		 = sfx_data[5].dat;
-				sfx[SMPL_ENGINE]	 = sfx_data[6].dat;
-				sfx[SMPL_HEART]		 = sfx_data[7].dat;
-				sfx[SMPL_HIT]		 = sfx_data[8].dat;
-				sfx[SMPL_HURT]		 = sfx_data[9].dat;
-				sfx[SMPL_CRUSH_LAND] = sfx_data[10].dat;
-				sfx[SMPL_JUMP]		 = sfx_data[11].dat;
-				sfx[SMPL_E_DIE]		 = sfx_data[12].dat;
-				sfx[SMPL_MENU]		 = sfx_data[13].dat;
-				sfx[SMPL_PAUSE]		 = sfx_data[14].dat;
-				sfx[SMPL_POINT]		 = sfx_data[15].dat;
-				sfx[SMPL_SHIP]		 = sfx_data[16].dat;
-				sfx[SMPL_SHOOT]		 = sfx_data[17].dat;
-				sfx[SMPL_SPIT]		 = sfx_data[18].dat;
-				sfx[SMPL_STAR]		 = sfx_data[19].dat;
-				sfx[SMPL_STARTUP]	 = sfx_data[20].dat;
-				sfx[SMPL_MASH]		 = sfx_data[21].dat;
-				sfx[SMPL_TALK]		 = sfx_data[22].dat;
-				sfx[SMPL_SPIN]		 = sfx_data[23].dat;
-				sfx[SMPL_XTRALIFE]	 = sfx_data[24].dat;
-			}
-		}	
-		else {
-			// load sounds from disk
-			log2file(" loading sounds from %s", get_config_string("sound", "sfx_path", ""));
-			sfx[SMPL_STARTUP]	 = load_path_sample("startup.wav");
-			sfx[SMPL_POINT]		 = load_path_sample("point.wav");
-			sfx[SMPL_JUMP]		 = load_path_sample("jump.wav");
-			sfx[SMPL_MASH]		 = load_path_sample("stomp.wav");
-			sfx[SMPL_EAT]		 = load_path_sample("eat.wav");
-			sfx[SMPL_SPIT]		 = load_path_sample("spit.wav");
-			sfx[SMPL_A_DIE]		 = load_path_sample("die.wav");
-			sfx[SMPL_HIT]		 = load_path_sample("hit.wav");
-			sfx[SMPL_CRUSH]		 = load_path_sample("crush.wav");
-			sfx[SMPL_E_DIE]		 = load_path_sample("kill.wav");
-			sfx[SMPL_HEART]		 = load_path_sample("heart.wav");
-			sfx[SMPL_HURT]		 = load_path_sample("hurt.wav");
-			sfx[SMPL_XTRALIFE]	 = load_path_sample("xtralife.wav");
-			sfx[SMPL_CHERRY]	 = load_path_sample("cherry.wav");
-			sfx[SMPL_MENU]		 = load_path_sample("menu.wav");
-			sfx[SMPL_SHOOT]		 = load_path_sample("shoot.wav");
-			sfx[SMPL_SPIN]		 = load_path_sample("turn.wav");
-			sfx[SMPL_STAR]		 = load_path_sample("star.wav");
-			sfx[SMPL_CRUSH_LAND] = load_path_sample("impact.wav");
-			sfx[SMPL_PAUSE]		 = load_path_sample("pause.wav");
-			sfx[SMPL_ENGINE]	 = load_path_sample("engine.wav");
-			sfx[SMPL_CHOPPER]	 = load_path_sample("chopper.wav");
-			sfx[SMPL_SHIP]		 = load_path_sample("ship.wav");
-			sfx[SMPL_BEAM]		 = load_path_sample("energy.wav");
-			sfx[SMPL_TALK]		 = load_path_sample("alex.wav");
-		}
+		set_sound_volume(options.sample_volume);
+		set_music_volume(options.music_volume);
 	}
-
+#endif
 
 	// misc
 	log2file(" initializing scroller");
-	init_scroller(&hscroll, data[THE_FONT].dat, scroller_message, 160, 10, TRUE);
-
-	options.use_vsync = get_config_int("graphics", "vsync", 0);
-	log2file(" vsync set to %s", (options.use_vsync ? "ON" : "OFF"));
+	init_scroller(&hscroll, scroller_message, 160, 10, true);
 
 	// done!
-	play_sound(sfx[SMPL_STARTUP]); 
+	play_sound_id(S_STARTUP); 
 	wait_key(2);
-	fade_out_pal(100);
+	fade_out_pal(swap_screen, 100);
 
 
 	init_ok = 1;
 	log2file(" init OK!");
-	return TRUE;
+	return true;
 }
-
 
 // uninits the game
 void uninit_game() {
 	int i;
-	PACKFILE *pf;
+	FILE *pf;
 #ifdef __unix__
 	char filename[512];
 	char *homedir = get_homedir();
@@ -992,68 +501,57 @@ void uninit_game() {
 
 	log2file("\nExit routines:");
 
-	log2file(" unloading datafile");
-	if (data != NULL) unload_datafile(data);
-	
-	log2file(" unloading original maps");
-	if (maps != NULL) unload_datafile(maps);
+	log2file(" unloading datafiles");
+	unload_data();
 
 	log2file(" destroying temporary map");
 	if (map != NULL) destroy_map(map);
 
 	log2file(" freeing level names");
-	for(i = 0; i < num_levels; i ++) free(level_files[i]);
+	for(i = 0; i < num_levels; i ++)
+		free(level_files[i]);
 
 	// only save if everything was inited ok!
 	if (init_ok) {
 		log2file(" saving options");
 #ifdef __unix__
-		snprintf(filename, sizeof(filename), "%s/.alex4/alex4.sav",
+		snprintf(filename, sizeof(filename), "%s/.alex4/config",
 			homedir? homedir:".");
-		pf = pack_fopen(filename, "wp");
 #else
-		pf = pack_fopen("alex4.sav", "wp");
+		strcpy(filename, "config.ini");
 #endif
-		if (pf) {
-			save_options(&options, pf);
-			pack_fclose(pf);
-		}
-		
-		log2file(" saving highscores");
+		save_options(&options, filename);
+
 #ifdef __unix__
-		snprintf(filename, sizeof(filename), "%s/.alex4/alex4.hi",
+		snprintf(filename, sizeof(filename), "%s/.alex4/highscore",
 			homedir? homedir:".");
-		pf = pack_fopen(filename, "wp");
 #else
-		pf = pack_fopen("alex4.hi", "wp");
+		strcpy(filename, "highscore.dat");
 #endif
-		if (pf) {
-			save_hisc_table(hisc_table, pf);
-			save_hisc_table(hisc_table_space, pf);
-			pack_fclose(pf);
-		}
+		save_hisc_table(hisc_table, filename);
+#ifdef ENABLE_SHOOTER
+#ifdef __unix__
+		strcat(filename, "-shooter")
+#else
+		strcpy(filename, "highscore-shooter.dat");
+#endif
+		save_hisc_table(hisc_table_space, pf);
+#endif
 	}
 
-	if (get_config_int("sound", "use_sound_datafile", 1)) {
-		log2file(" unloading sound data");
-		if (sfx_data != NULL) unload_datafile(sfx_data);
-	}
-	else {
+	if (got_sound) {
+		log2file(" stopping music");
+		stop_music();
 		log2file(" freeing sounds");
-		for(i = 0; i < MAX_SOUNDS; i ++) {
-			if (sfx[i] != NULL)	destroy_sample(sfx[i]);
-		}
+		free_sfx();
+		Mix_CloseAudio();
 	}
 
-	log2file(" exiting dumb");
-#ifdef ALEX_NEW_DUMB
-	unload_duh(duh);
-	dumbfile_close(dmbf);
+	log2file(" exiting SDL");
+#ifndef NO_SOUND
+	Mix_Quit();
 #endif
-	dumb_exit();
-
-	log2file(" exiting allegro");
-	allegro_exit();   
+	SDL_Quit();
 }
 
 // inits the player on a map
@@ -1078,27 +576,29 @@ void init_player(Tplayer *p, Tmap *m) {
 
 // draws text with an outline
 void textout_outline(BITMAP *bmp, const char *txt, int x, int y) {
-	textout_ex(bmp, data[THE_FONT].dat, txt, x+1, y, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, txt, x-1, y, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, txt, x, y+1, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, txt, x, y-1, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, txt, x, y, 4, -1);
+	textout_ex(bmp, txt, x+1, y, 1, -1);
+	textout_ex(bmp, txt, x-1, y, 1, -1);
+	textout_ex(bmp, txt, x, y+1, 1, -1);
+	textout_ex(bmp, txt, x, y-1, 1, -1);
+	textout_ex(bmp, txt, x, y, 4, -1);
 }
 
 // draws centered text with an outline
 void textout_outline_center(BITMAP *bmp, const char *txt, int cx, int y) {
-	int x = cx - text_length(data[THE_FONT].dat, txt) / 2;
+	int x = cx - text_length(txt) / 2;
 	textout_outline(bmp, txt, x, y);
 }
 
 // plays the let's go sequence
 void show_lets_go() {
-	BITMAP *go = data[LETSGO].dat;
+	BITMAP *go = bitmaps[I_LETSGO];
 	int x = -go->w;
 	int mode = 0;
 	int wait = 0;
 	int y = 120, ty = 60;
 	int dy = 0;
+
+	set_window_title(map->name);
 
 	cycle_count = 0;
 	while(mode != 3) {
@@ -1109,9 +609,6 @@ void show_lets_go() {
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
-
-			// poll music machine
-			if (got_sound) al_poll_duh(dp);
 
 			// move text
 			if (mode == 0 || mode == 2) x += 4;
@@ -1142,8 +639,10 @@ void show_lets_go() {
 
 // shows the game over sign sequence
 void show_game_over() {
-	BITMAP *go = data[GAME_OVER].dat;
+	BITMAP *go = bitmaps[I_GAME_OVER];
 	
+	set_window_title("GAME OVER");
+
 	int x = -go->w;
 	int mode = 0;
 	int wait = 0;
@@ -1157,9 +656,7 @@ void show_game_over() {
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
-
-			// poll music machine
-			if (got_sound) al_poll_duh(dp);
+			update_sdl_keyboard();
 
 			// move text
 			if (mode == 0 || mode == 2) x += 4;
@@ -1185,16 +682,22 @@ void show_game_over() {
 // show_custom_ending()
 void draw_custom_ending(BITMAP *bmp) {
 	int i, r;
-	BITMAP *head = data[FLD_HEAD].dat;
+	BITMAP *head = bitmaps[I_FLD_HEAD];
 
-	blit(data[INTRO_BG].dat, bmp, 0, 0, 0, 0, 160, 120);
+	set_window_title("GOOD ENDING");
 
+	blit(bitmaps[I_INTRO_BG], bmp, 0, 0, 0, 0, 160, 120);
+
+	// FIXME: STUB ending
+	draw_sprite(bmp, head, 64, 6);
+	#if 0
 	r = 70 + fixtoi(20 * fixcos(itofix(game_count >> 1)) + 20 * fixsin(itofix((int)(game_count / 2.7))) );
 	for(i = 0; i < 256; i += 32) 
 		draw_sprite(bmp, head, 80 - head->w/2 + fixtoi(r * fixcos(itofix(game_count + i))), 60 - head->h/2 + fixtoi(r * fixsin(itofix(game_count + i))));
+	#endif
 
-	draw_sprite_h_flip(bmp, data[ALEX].dat, 60, 40);
-	draw_sprite(bmp, data[LOLA].dat, 84, 40);
+	draw_sprite_h_flip(bmp, bitmaps[I_ALEX], 60, 40);
+	draw_sprite(bmp, bitmaps[I_LOLA], 84, 40);
 
 	textout_outline_center(bmp, "Congratulations!", 80, 60);
 	textout_outline_center(bmp, "A winner is you!", 80, 80);
@@ -1209,7 +712,7 @@ void show_custom_ending() {
 	tmp = game_count;
 	draw_custom_ending(swap_screen);
 	blit_to_screen(swap_screen);
-	fade_in_pal(100);
+	fade_in_pal(swap_screen, 100);
 	game_count = tmp;
 
 	cycle_count = 0;
@@ -1221,9 +724,6 @@ void show_custom_ending() {
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
-
-			// poll music machine
-			if (got_sound) al_poll_duh(dp);
 
 			// poll user
 			poll_control(&ctrl);
@@ -1241,31 +741,15 @@ void show_custom_ending() {
 		draw_custom_ending(swap_screen);
 		blit_to_screen(swap_screen);
 	}
-
-}
-
-// lighten or darken a 4 color bitmap
-void transform_bitmap(BITMAP *bmp, int steps) {
-	int x, y;
-	int c;
-
-	for(x = 0; x < bmp->w; x ++) {
-		for(y = 0; y < bmp->h; y ++) {
-			c = _getpixel(bmp, x, y);
-			_putpixel(bmp, x, y, MIN(MAX(c + steps, 1), 4));
-		}
-		if (got_sound) al_poll_duh(dp);
-	}
 }
 
 // draws the scoring sequence at end of level
 // used by show_cutscene(..)
 void draw_cutscene(BITMAP *bmp, int org_level, int _level, int _lives, int _stars, int _cherries) {
-	BITMAP *go = data[LEVELCOMPLETE].dat;
+	BITMAP *go = bitmaps[I_LEVELCOMPLETE];
 	char buf[80];
 
 	clear_bitmap(bmp);
-
 	draw_sprite(bmp, go, 80 - go->w/2, 10);
 
 	sprintf(buf, "Level    %2d*100 = %4d", org_level, _level);
@@ -1298,17 +782,14 @@ void show_cutscene(int level) {
 	}
 
 	// music!
-	if (got_sound) start_music(MOD_LEVEL_DONE);
+	start_music(MOD_LEVEL_DONE);
 
 	// create cutscene screene
 	blit(swap_screen, swap2, 0, 0, 0, 0, 160, 120);
-
 	transform_bitmap(swap2, -1);
-
 	draw_cutscene(bmp, level, _level, _lives, _stars, _cherries);
 
 	// scroll bmp onto swap_screen
-	clear_keybuf();
 	cycle_count = 0;
 	while(mode != 3) {
 		// let other processes play
@@ -1321,9 +802,6 @@ void show_cutscene(int level) {
 			my_counter ++;
 			poll_control(&ctrl);
 
-			// poll music machine
-			if (got_sound) al_poll_duh(dp);
-
 			if (((mode == 1) && (keypressed() || is_fire(&ctrl) || is_jump(&ctrl))) || my_counter > 200) {
 				mode = 2;
 			}
@@ -1332,7 +810,6 @@ void show_cutscene(int level) {
 			if (mode == 0) x += 8;
 			if (x == 0 && mode == 0) {
 				mode = 1;
-				clear_keybuf();
 			}
 
 			// count stats
@@ -1344,7 +821,7 @@ void show_cutscene(int level) {
 				if (_cherries) { player.score +=   10; _cherries -=  10; a++; }
 				if (!a) mode = 3;
 
-				play_sound(sfx[SMPL_POINT]);
+				play_sound_id(S_POINT);
 
 				draw_cutscene(bmp, level, _level, _lives, _stars, _cherries);
 			}
@@ -1362,9 +839,9 @@ void show_cutscene(int level) {
 
 	wait_key(5);
 
-	if (got_sound) stop_music();
-
+	stop_music();
 	destroy_bitmap(bmp);
+	destroy_bitmap(swap2);
 }
 
 // shows a highscore table
@@ -1372,6 +849,7 @@ void show_scores(int space, Thisc *table) {
 	DATAFILE *df = NULL;
 	BITMAP *bg = NULL;
 
+#ifdef ENABLE_SHOOTER
 	if (space) {
 		// get space bg
 		packfile_password(init_string);
@@ -1383,9 +861,10 @@ void show_scores(int space, Thisc *table) {
 		else
 			msg_box("ooga");
 	}
+#endif
 
 	if (bg == NULL || !space)
-		blit(data[INTRO_BG].dat, swap_screen, 0, 0, 0, 0, 160, 120);
+		blit(bitmaps[I_INTRO_BG], swap_screen, 0, 0, 0, 0, 160, 120);
 	else {
 		clear_to_color(swap_screen, 1);
 		blit(bg, swap_screen, 0, 0, 0, 0, 160, 120);
@@ -1393,24 +872,23 @@ void show_scores(int space, Thisc *table) {
 
 	textout_outline_center(swap_screen, "High scores", 80, 8);
 	textout_outline_center(swap_screen, "Press any key", 80, 100);
-	draw_hisc_table(table, swap_screen, data[THE_FONT].dat, 10, 30, (space ? 4 : 1), !space);
+	draw_hisc_table(table, swap_screen, 10, 30, (space ? 4 : 1), !space);
 
 	blit_to_screen(swap_screen);
-	fade_in_pal(100);
+	fade_in_pal(swap_screen, 100);
 
-	clear_keybuf();
 	poll_control(&ctrl);
 	while(!is_jump(&ctrl) && !keypressed()) {
 		poll_control(&ctrl);
-		if (got_sound) al_poll_duh(dp);
 	}
-	play_sound(sfx[SMPL_MENU]);
+	play_sound_id(S_MENU);
 
-	fade_out_pal(100);
+	fade_out_pal(swap_screen, 100);
 
+#ifdef ENABLE_SHOOTER
 	// clean up
 	if (df != NULL) unload_datafile_object(df);
-
+#endif
 }
 
 // draws the level selector
@@ -1419,30 +897,33 @@ void draw_select_starting_level(BITMAP *bmp, int level, int min, int max) {
 	char buf[80];
 	int xpos = 2;
 
-	blit(data[ALEX_BG].dat, bmp, 0, 0, 0, 0, 160, 112);
+	blit(bitmaps[I_ALEX_BG], bmp, 0, 0, 0, 0, 160, 112);
 	rectfill(bmp, 0, 112, 160, 120, 2);
 
 	sprintf(buf, "%s %d %s", (level > min ? "<" : " "), level, (level < max ? ">" : " "));
 	clear_bitmap(stuff);
-	textout_centre_ex(stuff, data[THE_FONT].dat, buf, stuff->w/2 + 1, 1, 2, -1);
-	textout_centre_ex(stuff, data[THE_FONT].dat, buf, stuff->w/2, 0, 1, -1);
+	textout_centre_ex(stuff, buf, stuff->w/2 + 1, 1, 2, -1);
+	textout_centre_ex(stuff, buf, stuff->w/2, 0, 1, -1);
 	stretch_sprite(bmp, stuff, 80 - 4*stuff->w/2, 30, 4*stuff->w, 4*stuff->h);
 
-	textout_centre_ex(bmp, data[THE_FONT].dat, "SELECT START LEVEL", 80, 90, 1, -1);
-	textout_centre_ex(bmp, data[THE_FONT].dat, "SELECT START LEVEL", 79, 89, 4, -1);
+	textout_centre_ex(bmp, "SELECT START LEVEL", 80, 90, 1, -1);
+	textout_centre_ex(bmp, "SELECT START LEVEL", 79, 89, 4, -1);
 
+#if ENABLE_SHOOTER
 	if (options.one_hundred) {
-		if (game_count & 32 || game_count & 16) draw_sprite(bmp, data[SHIP100].dat, xpos, 2);
+		if (game_count & 32 || game_count & 16) draw_sprite(bmp, bitmaps[I_SHIP100], xpos, 2);
 	}
-	else {
+	else
+#endif
+	{
 		if (options.stars[level - 1]) {
-			draw_sprite(bmp, data[STAR].dat, xpos, 2);
-			draw_sprite(bmp, data[ALL100].dat, xpos + 4, 14);
+			draw_sprite(bmp, bitmaps[I_STAR], xpos, 2);
+			draw_sprite(bmp, bitmaps[I_ALL100], xpos + 4, 14);
 			xpos += 20;
 		}
 		if (options.cherries[level - 1]) {
-			draw_sprite(bmp, data[CHERRY].dat, xpos, 2);
-			draw_sprite(bmp, data[ALL100].dat, xpos + 4, 14);
+			draw_sprite(bmp, bitmaps[I_CHERRY], xpos, 2);
+			draw_sprite(bmp, bitmaps[I_ALL100], xpos + 4, 14);
 		}
 	}
 
@@ -1457,9 +938,7 @@ int select_starting_level() {
 
 	draw_select_starting_level(swap_screen, start_level, 1, options.max_levels + 1);
 	blit_to_screen(swap_screen);
-	fade_in_pal(100);
-
-	clear_keybuf();
+	fade_in_pal(swap_screen, 100);
 
 	cycle_count = 0;
 	while(!done) {
@@ -1471,40 +950,37 @@ int select_starting_level() {
 		while(cycle_count > 0) {
 			logic_count ++;
 
-			// poll music machine
-			if (got_sound) al_poll_duh(dp);
-
 			// check controls
 			poll_control(&ctrl);
 			if (is_right(&ctrl) && start_level < options.max_levels + 1 && !counter) {
 				start_level ++;
-				play_sound(sfx[SMPL_MENU]);
+				play_sound_id(S_MENU);
 			}
 
 			if (is_left(&ctrl) && start_level > 1 && !counter) {
 				start_level --;
-				play_sound(sfx[SMPL_MENU]);
+				play_sound_id(S_MENU);
 			}
 
 			if (is_jump(&ctrl) || is_fire(&ctrl)) {
 				done = 1;
-				play_sound(sfx[SMPL_MENU]);
+				play_sound_id(S_MENU);
 			}
 			if (keypressed()) {
-				int scancode = readkey() >> 8;
+				int scancode = readkey();
 				if (scancode == KEY_SPACE || scancode == KEY_ENTER) {
 					done = 1;
-					play_sound(sfx[SMPL_MENU]);
+					play_sound_id(S_MENU);
 				}
 				if (scancode == KEY_F1 && options.one_hundred) {
 					done = 1;
 					start_level = -100;
-					play_sound(sfx[SMPL_MENU]);
+					play_sound_id(S_MENU);
 				}
 				if (scancode == KEY_ESC) {
 					done = 1;
 					start_level = -1;
-					play_sound(sfx[SMPL_MENU]);
+					play_sound_id(S_MENU);
 				}
 			}
 			if (!is_left(&ctrl) || !is_right(&ctrl)) counter = 0;
@@ -1536,12 +1012,11 @@ void new_game(int reset_player_data) {
 	player.actor = &actor[0];
 	player.eat_counter = 0;
 	actor[0].active = 1;
-	actor[0].data = data;
-	actor[0].frames[0] = HERO000;
-	actor[0].frames[1] = HERO001;
-	actor[0].frames[2] = HERO002;
-	actor[0].frames[3] = HERO003;
-	actor[0].frames[4] = HERO_NORM;
+	actor[0].frames[0] = I_HERO000;
+	actor[0].frames[1] = I_HERO001;
+	actor[0].frames[2] = I_HERO002;
+	actor[0].frames[3] = I_HERO003;
+	actor[0].frames[4] = I_HERO_NORM;
 	actor[0].num_frames = 4;
 	actor[0].frame = 0;
 	actor[0].anim_counter = 0;
@@ -1576,15 +1051,15 @@ void init_map(Tmap *m) {
 	for(x = 0; x < m->width; x ++) {
 		for(y = 0; y < m->height; y ++) {
 			if (m->dat[x + y * m->width].type == MAP_ENEMY1) {	// small human
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_ENEMY1;
 					a->num_frames = 4;					
-					a->frames[0] = ENEMY1_01;
-					a->frames[1] = ENEMY1_02;
-					a->frames[2] = ENEMY1_03;
-					a->frames[3] = ENEMY1_04;
-					a->flat_frame = ENEMY1_05;
+					a->frames[0] = I_ENEMY1_01;
+					a->frames[1] = I_ENEMY1_02;
+					a->frames[2] = I_ENEMY1_03;
+					a->frames[3] = I_ENEMY1_04;
+					a->flat_frame = I_ENEMY1_05;
 					a->w = 12; a->h = 14;
 					a->ox = 2; a->oy = 2;
 					a->flags = ACF_JUMPABLE | ACF_FLATABLE | ACF_HURTS | ACF_SHOOTABLE | ACF_ROLLABLE;
@@ -1592,15 +1067,15 @@ void init_map(Tmap *m) {
 				}
 			}
 			if (m->dat[x + y * m->width].type == MAP_ENEMY2) { // big human
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_ENEMY2;
 					a->num_frames = 4;					
-					a->frames[0] = ENEMY2_01;
-					a->frames[1] = ENEMY2_02;
-					a->frames[2] = ENEMY2_03;
-					a->frames[3] = ENEMY2_04;
-					a->flat_frame = ENEMY2_05;
+					a->frames[0] = I_ENEMY2_01;
+					a->frames[1] = I_ENEMY2_02;
+					a->frames[2] = I_ENEMY2_03;
+					a->frames[3] = I_ENEMY2_04;
+					a->flat_frame = I_ENEMY2_05;
 					a->w = 12; a->h = 19;
 					a->ox = 2; a->oy = 5;
 					a->flags = ACF_JUMPABLE | ACF_FLATABLE | ACF_HURTS | ACF_SHOOTABLE | ACF_ROLLABLE;
@@ -1608,22 +1083,22 @@ void init_map(Tmap *m) {
 				}
 			}
 			if (m->dat[x + y * m->width].type == MAP_ENEMY3) { // crusher
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_ENEMY3;
 					a->num_frames = 1;					
-					a->frames[0] = ENEMY3;
+					a->frames[0] = I_ENEMY3;
 					a->w = 30; a->h = 16;
 					a->ox = 1; a->oy = 112-16;
 					a->flags = ACF_HURTS;
 				}
 			}
 			if (m->dat[x + y * m->width].type == MAP_ENEMY4) { // spike fish
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_ENEMY4;
 					a->num_frames = 1;					
-					a->frames[0] = ENEMY4;
+					a->frames[0] = I_ENEMY4;
 					a->w = 12; a->h = 14;
 					a->ox = 2; a->oy = 2;
 					a->flags =  ACF_HURTS | ACF_SHOOTABLE | ACF_ROLLABLE;
@@ -1631,11 +1106,11 @@ void init_map(Tmap *m) {
 				}
 			}
 			if (m->dat[x + y * m->width].type == MAP_ENEMY5) { // yelly fish
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_ENEMY5;
 					a->num_frames = 1;					
-					a->frames[0] = ENEMY5_01;
+					a->frames[0] = I_ENEMY5_01;
 					a->w = 12; a->h = 14;
 					a->ox = 2; a->oy = 2;
 					a->flags = ACF_JUMPABLE | ACF_HURTS | ACF_SHOOTABLE | ACF_ROLLABLE;
@@ -1643,7 +1118,7 @@ void init_map(Tmap *m) {
 				}
 			}
 			if (m->dat[x + y * m->width].type == MAP_ENEMY6) { // cannon
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_ENEMY6;
 					a->num_frames = 0;					
@@ -1651,32 +1126,32 @@ void init_map(Tmap *m) {
 				}
 			}
 			if (m->dat[x + y * m->width].type == MAP_GUARD1) { // spike-car
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_GUARD1;
 					a->energy = 100;
 					a->num_frames = 4;					
 					a->hit_offset = 4;					
-					a->frames[0] = GUARD1_1;
-					a->frames[1] = GUARD1_2;
-					a->frames[2] = GUARD1_3;
-					a->frames[3] = GUARD1_4;
+					a->frames[0] = I_GUARD1_1;
+					a->frames[1] = I_GUARD1_2;
+					a->frames[2] = I_GUARD1_3;
+					a->frames[3] = I_GUARD1_4;
 					a->w = 32; a->h = 32;
 					a->ox = 0; a->oy = 0;
 					a->flags = ACF_HURTS | ACF_ROLLABLE_BACK;
 					m->num_enemies ++;
-					a->sound = SMPL_ENGINE;
+					a->sound = S_ENGINE;
 					play_sound_id_ex(a->sound, 100, 1000, 1);
 				}
 			}
 			if (m->dat[x + y * m->width].type == MAP_GUARD2) { // spike-jumper-crusher
-				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16, data);
+				Tactor *a = make_actor(actor, x << 4, (y << 4) + 16);
 				if (a != NULL) {
 					a->type = MAP_GUARD2;
 					a->energy = 150;
 					a->num_frames = 2;					
-					a->frames[0] = GUARD2_1a;
-					a->frames[1] = GUARD2_1b;
+					a->frames[0] = I_GUARD2_1A;
+					a->frames[1] = I_GUARD2_1B;
 					a->w = 32; a->h = 32;
 					a->ox = 0; a->oy = 16;
 					a->flags = ACF_HURTS | ACF_JUMPABLE | ACF_BOUNCEABLE;
@@ -1711,19 +1186,15 @@ void new_level(const char *fname, int level_id, int draw) {
 		}
 		else {
 			// get map from data file
-			log2file(" getting map %d from datafile", atoi(fname));
-			map = load_map_from_memory((void *)data[SCRIPTMAP0 + atoi(fname)].dat);
+			log2file(" getting script map %d from datafile", atoi(fname));
+			map = load_scriptmap_from_memory(atoi(fname));
 		}
 	}
 	else {
-		// get map from MAP data file
-		log2file(" getting map %d from map-datafile", level_id);
-		map = load_map_from_memory((void *)maps[level_id].dat);
+		// get map from data file
+		log2file(" getting map %d from datafile", level_id);
+		map = load_map_from_memory(level_id);
 	}
-
-	
-
-	map->data = data;
 
 	init_player(&player, map);
 
@@ -1753,7 +1224,7 @@ void new_level(const char *fname, int level_id, int draw) {
 	if (draw) {
 		draw_frame(swap_screen, 1);
 		blit_to_screen(swap_screen);
-		fade_in_pal(100);
+		fade_in_pal(swap_screen, 100);
 	}
 }
 
@@ -1796,9 +1267,9 @@ void update_player() {
 			if (player.ammo) {
 				Tbullet *b = get_free_bullet(bullet, MAX_BULLETS);
 				if (b != NULL) {
-					set_bullet(b, (int)player.actor->x + 7, (int)player.actor->y - 14, (player.actor->direction ? 4 : -4), 0, data[EGG2].dat, 0);
+					set_bullet(b, (int)player.actor->x + 7, (int)player.actor->y - 14, (player.actor->direction ? 4 : -4), 0, bitmaps[I_EGG2], 0);
 					player.ammo --;
-					play_sound(sfx[SMPL_SPIT]);
+					play_sound_id(S_SPIT);
 				}
 			}
 
@@ -1842,10 +1313,10 @@ void update_player() {
 		}
 	
 		// horizontal tile collision
-		if (is_ground(map, player.actor->x + x1, player.actor->y - 1))  { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound(sfx[SMPL_HIT]); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
-		if (is_ground(map, player.actor->x + x2, player.actor->y - 1))  { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound(sfx[SMPL_HIT]); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
-		if (is_ground(map, player.actor->x + x1, player.actor->y - 15)) { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound(sfx[SMPL_HIT]); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
-		if (is_ground(map, player.actor->x + x2, player.actor->y - 15)) { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound(sfx[SMPL_HIT]); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
+		if (is_ground(map, player.actor->x + x1, player.actor->y - 1))  { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound_id(S_HIT); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
+		if (is_ground(map, player.actor->x + x2, player.actor->y - 1))  { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound_id(S_HIT); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
+		if (is_ground(map, player.actor->x + x1, player.actor->y - 15)) { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound_id(S_HIT); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
+		if (is_ground(map, player.actor->x + x2, player.actor->y - 15)) { player.actor->x = old_x; if (player.actor->status == AC_BALL) play_sound_id(S_HIT); player.actor->status = (player.actor->status == AC_BALL ? AC_NORM : player.actor->status); };
 	
 		
 		// vertical movement
@@ -1865,7 +1336,7 @@ void update_player() {
 			player.actor->dy = -16;
 			player.jumping = 1;
 			player.jump_pressed = 1;
-			play_sound(sfx[SMPL_JUMP]);
+			play_sound_id(S_JUMP);
 		}
 		if (!is_jump(&ctrl)) {
 			if (player.actor->dy < 0) player.actor->dy >>= 1;
@@ -1895,7 +1366,7 @@ void update_player() {
 				if (player.actor->status != AC_BALL) player.actor->status = AC_EAT;
 				player.eat_counter = 0;
 				player.ammo ++;
-				play_sound(sfx[SMPL_EAT]);
+				play_sound_id(S_EAT);
 			}
 			if (mp->item == MAP_HEART) {
 				mp->item = 0;
@@ -1907,7 +1378,7 @@ void update_player() {
 				else { 
 					player.health ++;
 				}
-				play_sound(sfx[SMPL_HEART]);
+				play_sound_id(S_HEART);
 			}
 			if (mp->item == MAP_STAR) {
 				mp->item = 0;
@@ -1915,13 +1386,13 @@ void update_player() {
 				player.eat_counter = 0;
 				player.score += 100;
 				player.stars_taken ++;
-				play_sound(sfx[SMPL_STAR]);
+				play_sound_id(S_STAR);
 
 				if (player.stars == player.stars_taken) {
 					Tparticle *p;
 					p = get_free_particle(particle, MAX_PARTICLES);
 					if (p != NULL) {
-						set_particle(p, (tx << 4) + 4, ty << 4, 0, -0.5, 0, 50, ALL100);
+						set_particle(p, (tx << 4) + 4, ty << 4, 0, -0.5, 0, 50, I_ALL100);
 					}
 				}
 			}
@@ -1931,13 +1402,13 @@ void update_player() {
 				player.eat_counter = 0;
 				player.score += 10;
 				player.cherries_taken ++;
-				play_sound(sfx[SMPL_CHERRY]);
+				play_sound_id(S_CHERRY);
  
 				if (player.cherries == player.cherries_taken) {
 					Tparticle *p;
 					p = get_free_particle(particle, MAX_PARTICLES);
 					if (p != NULL) {
-						set_particle(p, (tx << 4) + 8, ty << 4, 0, -0.5, 0, 50, ALL100);
+						set_particle(p, (tx << 4) + 8, ty << 4, 0, -0.5, 0, 50, I_ALL100);
 					}
 				}
 			}
@@ -1947,7 +1418,7 @@ void update_player() {
 				if (player.actor->status != AC_BALL) player.actor->status = AC_EAT;
 				player.eat_counter = 0;
 				player.lives ++;
-				play_sound(sfx[SMPL_XTRALIFE]);
+				play_sound_id(S_XTRALIFE);
 			}
 		}
 
@@ -1963,7 +1434,7 @@ void update_player() {
 		if (mp != NULL) {
 			if (mp->type == MAP_DEAD) {
 				kill_player(&player);
-				play_sound(sfx[SMPL_A_DIE]);
+				play_sound_id(S_DIE);
 			}
 			if (mp->type == MAP_EXIT) {
 				map->win_conditions_fullfilled |=  map->win_conditions & MAP_WIN_EXIT;
@@ -1981,7 +1452,7 @@ void update_player() {
 				mp->tile = mp->type = mp->mask = 0;
 				create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 16, 64, 0, -1);
 				create_burst(particle, (tx << 4) + 7, (ty << 4) + 7, 16, 64, 0, -1);
-				play_sound(sfx[SMPL_CRUSH]);
+				play_sound_id(S_CRUSH);
 			}
 		}
 			
@@ -1997,7 +1468,7 @@ void update_player() {
 				if (m != NULL) {
 					if (!m->mask) {
 						player.actor->status = AC_BALL;
-						play_sound(sfx[SMPL_SPIN]);
+						play_sound_id(S_TURN);
 					}
 				}
 			}
@@ -2026,7 +1497,7 @@ void check_bullets_with_enemies() {
 						actor[e].direction = (bullet[b].dx > 0 ? 0 : 1);
 						bullet[b].exist = 0;
 						create_burst(particle, (int)bullet[b].x+4, (int)bullet[b].y+3, 4, 8, 0, -1);
-						play_sound(sfx[SMPL_E_DIE]);
+						play_sound_id(S_KILL);
 					}
 				}
 			}
@@ -2045,8 +1516,8 @@ void check_bullets_with_alex() {
 				if (check_bb_collision(bullet[b].x+1, bullet[b].y+1, bullet[b].bmp->w-1, bullet[b].bmp->h-1, actor[0].x+4, actor[0].y-16, 8, 16)) {
 					if (!player.wounded) {
 						wound_player(&player);
-						if (player.actor->status == AC_DEAD) play_sound(sfx[SMPL_A_DIE]);
-						else play_sound(sfx[SMPL_HURT]);
+						if (player.actor->status == AC_DEAD) play_sound_id(S_DIE);
+						else play_sound_id(S_HURT);
 					}
 					//actor[0].direction = (bullet[b].dx > 0 ? 1 : 0);
 					bullet[b].exist = 0;
@@ -2072,7 +1543,7 @@ void check_alex_with_enemies() {
 						Tparticle *p;
 						p = get_free_particle(particle, MAX_PARTICLES);
 						if (p != NULL) {
-							set_particle(p, actor[e].x + (actor[e].w >> 1), actor[0].y, 0, 0, 0, 5, PARTICLE_BOPP);
+							set_particle(p, actor[e].x + (actor[e].w >> 1), actor[0].y, 0, 0, 0, 5, I_PARTICLE_BOPP);
 						}
 						
 						if (actor[e].flags & ACF_FLATABLE) {
@@ -2091,8 +1562,8 @@ void check_alex_with_enemies() {
 							// bounce
 							player.actor->y = actor[e].y - actor[e].h - 6;
 							player.dy = -15;	// jump!
-							player.jumping = TRUE;
-							play_sound(sfx[SMPL_JUMP]);
+							player.jumping = true;
+							play_sound_id(S_JUMP);
 							if (actor[e].mode == 0) {
 								actor[e].mode = 4;
 								actor[e].counter = 0;
@@ -2100,12 +1571,12 @@ void check_alex_with_enemies() {
 						}
 						else {
 							player.dy = -5;
-							//play_sound((actor[e].type == MAP_ENEMY5 ? sfx[SMPL_E_DIE] : sfx[SMPL_MASH]));
-							play_sound(sfx[SMPL_MASH]);
+							//play_sound((actor[e].type == MAP_ENEMY5 ? sfx[S_KILL] : sfx[S_STOMP]));
+							play_sound_id(S_STOMP);
 							if (is_jump(&ctrl) ) {
 								player.dy = -20;	// jump!
-								player.jumping = TRUE;
-								play_sound(sfx[SMPL_JUMP]);
+								player.jumping = true;
+								play_sound_id(S_JUMP);
 							}
 						}
 					}
@@ -2120,13 +1591,13 @@ void check_alex_with_enemies() {
 									kill_actor(&actor[e]);
 									map->num_enemies --;
 									actor[e].direction = (actor[0].direction ? 0 : 1);
-									play_sound(sfx[SMPL_E_DIE]);	
+									play_sound_id(S_KILL);	
 								}
 								else if (actor[e].flags & ACF_ROLLABLE_BACK) {
 									if (actor[e].direction == actor[0].direction) {
 										actor[e].energy --;
 										actor[e].is_hit = 1;
-										play_sound(sfx[SMPL_HIT]);	
+										play_sound_id(S_HIT);	
 									}
 									else wounded = 1;
 								}
@@ -2135,14 +1606,14 @@ void check_alex_with_enemies() {
 							else wounded = 1;
 
 							if (!player.wounded && wounded) {
-								clear(swap_screen);
+								clear_bitmap(swap_screen);
 								wound_player(&player);
 								if (player.actor->status == AC_DEAD) {
 									actor[0].direction = actor[e].direction;
-									play_sound(sfx[SMPL_A_DIE]);
+									play_sound_id(S_DIE);
 								}
 								else {
-									play_sound(sfx[SMPL_HURT]);
+									play_sound_id(S_HURT);
 								}
 							}
 						}
@@ -2155,7 +1626,7 @@ void check_alex_with_enemies() {
 							actor[0].status = AC_EAT;
 							player.score += 50;
 							player.eat_counter = 0;
-							play_sound(sfx[SMPL_EAT]);
+							play_sound_id(S_EAT);
 						}
 					}
 				}
@@ -2279,8 +1750,8 @@ int do_pause_menu(BITMAP *bg) {
 	int done = 0;
 
 	// pause sound
-	if (got_sound && !editing) al_pause_duh(dp);
-	play_sound_id(SMPL_PAUSE);
+	if (!editing) pause_music(true);
+	play_sound_id(S_PAUSE);
 
 	// darken screen
 	transform_bitmap(bg, -1);
@@ -2293,12 +1764,11 @@ int do_pause_menu(BITMAP *bg) {
 	blit_to_screen(bg);
 
 	// wait to release esc
-	while(key[KEY_ESC]);
+	while(key[KEY_ESC])
+		update_sdl_keyboard();
 	
 	// wait for user input
-	clear_keybuf();
 	while(!done) {
-		if (got_sound) al_poll_duh(dp);
 		poll_control(&ctrl);
 		if (is_fire(&ctrl) || is_jump(&ctrl)) done = 1;
 		if (keypressed()) done = 1;
@@ -2308,13 +1778,13 @@ int do_pause_menu(BITMAP *bg) {
 
 	if (done == -1) {
 		game_status = GS_QUIT_GAME;
-		play_sound_id(SMPL_MENU);
+		play_sound_id(S_MENU);
 	}
 	else {
-		play_sound_id(SMPL_PAUSE);
+		play_sound_id(S_PAUSE);
 	}
 
-	if (got_sound && !editing) al_resume_duh(dp);
+	if (!editing) pause_music(false);
 
 	return done;
 }
@@ -2334,20 +1804,19 @@ int play(void) {
 		//  do logic
 		while(cycle_count > 0) {
 			logic_count ++;
-
-			// poll music machine
-			if (got_sound) {
-				al_poll_duh(dp);
-			}
+			update_sdl_keyboard();
 
 			// check if user wants to enter edit mode
 			if (!playing_original_game && !editing) {
+#if ENABLE_EDITOR
+
 				if (key[KEY_F1]) {		// toggle edit on/off
 					editing = 1;
-					if (got_sound) stop_music();
+					stop_music();
 					set_edit_mode(EDIT_MODE_DRAW);
 					log2file("Entering EDIT MODE");
 				}
+#endif
 			}
 			
 			// check player moves
@@ -2356,7 +1825,7 @@ int play(void) {
 	
 				// dead?
 				if (player.actor->status == AC_DEAD && !playing_go_music) {
-					if (got_sound) start_music((player.lives ? MOD_PLAYER_DIES : MOD_GAME_OVER));
+					start_music((player.lives ? MOD_PLAYER_DIES : MOD_GAME_OVER));
 					playing_go_music = 1;
 				}
 				
@@ -2365,7 +1834,7 @@ int play(void) {
 						kill_player(&player);
 						player.actor->y = 150;
 						player.actor->dy = -20;
-						play_sound(sfx[SMPL_A_DIE]);
+						play_sound_id(S_DIE);
 					}
 					else 
 						game_status = GS_GAME_DIED;
@@ -2423,9 +1892,10 @@ int play(void) {
 
 
 			}
+#if ENABLE_EDITOR
 			else { 			// edit stuff
-				int mx = mouse_x / (SCREEN_W / 160);
-				int my = mouse_y / (SCREEN_H / 120);
+				int mx = GetMouseX() / (GetScreenW() / 160);
+				int my = GetMouseY() / (GetScreenH() / 120);
 
 				player.actor->x = map->start_x * 16;
 				player.actor->y = map->start_y * 16 + 16;
@@ -2436,9 +1906,9 @@ int play(void) {
 				else {
 					player.actor->direction = 1;
 				}
-				update_edit_mode(map, swap_screen, mx, my, mouse_b);
+				update_edit_mode(map, swap_screen, mx, my, MouseBtn());
 			}
-			
+#endif
 			// COMMON STUFF
 			if (key[KEY_ESC]) {
 				do_pause_menu(swap_screen);
@@ -2446,7 +1916,8 @@ int play(void) {
 			}
 			if (key[KEY_F12]) {
 				take_screenshot(swap_screen);
-				while(key[KEY_F12])	if (got_sound) al_poll_duh(dp);
+				while(key[KEY_F12])
+					update_sdl_keyboard();
 				cycle_count = 0;
 			}
 			
@@ -2470,62 +1941,47 @@ void draw_title(BITMAP *bmp, int tick) {
 
 	if (!playing_original_game) strcpy(start_string, "CUSTOM GAME");
 
-	blit(data[ALEX_BG].dat, bmp, 0, 0, 0, 0, 160, 112);
+	blit(bitmaps[I_ALEX_BG], bmp, 0, 0, 0, 0, 160, 112);
 	rectfill(bmp, 0, 112, 160, 120, 2);
 
-	w = ((BITMAP *)data[ALEX_LOGO].dat)->w;
-	h = ((BITMAP *)data[ALEX_LOGO].dat)->h;
-	draw_sprite(bmp, data[ALEX_LOGO].dat, 80 - w/2, 30 - h/2);
+	w = bitmaps[I_ALEX_LOGO]->w;
+	h = bitmaps[I_ALEX_LOGO]->h;
+	draw_sprite(bmp, bitmaps[I_ALEX_LOGO], 80 - w/2, 30 - h/2);
 
 	draw_scroller(&hscroll, bmp, 0, 110);
 
 	y = 60;
 	x = 50;
-	textout_ex(bmp, data[THE_FONT].dat, start_string, x+1, y+1, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, start_string, x, y, 4, -1);
+	textout_ex(bmp, start_string, x+1, y+1, 1, -1);
+	textout_ex(bmp, start_string, x, y, 4, -1);
 
 	y += step;
-	textout_ex(bmp, data[THE_FONT].dat, "HIGH SCORES", x+1, y+1, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, "HIGH SCORES", x, y, 4, -1);
+	textout_ex(bmp, "HIGH SCORES", x+1, y+1, 1, -1);
+	textout_ex(bmp, "HIGH SCORES", x, y, 4, -1);
 
 	y += step;
-	textout_ex(bmp, data[THE_FONT].dat, "EDITOR", x+1, y+1, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, "EDITOR", x, y, 4, -1);
+#if ENABLE_EDITOR
+	textout_ex(bmp, "EDITOR", x+1, y+1, 1, -1);
+	textout_ex(bmp, "EDITOR", x, y, 4, -1);
+#else
+	textout_ex(bmp, "EDITOR", x+1, y+1, 1, -1);
+	textout_ex(bmp, "EDITOR", x, y, 1, -1);
+#endif
 
 	y += step;
-	textout_ex(bmp, data[THE_FONT].dat, "QUIT", x+1, y+1, 1, -1);
-	textout_ex(bmp, data[THE_FONT].dat, "QUIT", x, y, 4, -1);
+	textout_ex(bmp, "QUIT", x+1, y+1, 1, -1);
+	textout_ex(bmp, "QUIT", x, y, 4, -1);
 
-	draw_sprite(bmp, data[POINTER].dat, x - 25 + fixtoi(3 * fixcos(itofix(tick << 2))), 44 + menu_choice * step);
-}
-
-// switches gfx mode
-void switch_gfx_mode(int mode, int w, int h) {
-	log2file(" switching to %d x %d (%s)", w, h, (mode == GFX_AUTODETECT_WINDOWED ? "w" : "f"));
-	if (set_gfx_mode(mode, w, h, 0, 0)) {
-		log2file("  *** failed");
-		log2file("  trying default mode (640x480 win)");
-		if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, 640, 480, 0, 0)) {
-			log2file("  *** failed");
-			log2file("  trying default mode (640x480 full)");
-			if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, 640, 480, 0, 0)) {
-				log2file("  *** failed");
-				log2file("  exiting program...");
-				uninit_game();
-				exit(0);
-				log2file("\nDone...\n");
-			}
-		}
-	}
-
-	set_palette(data[0].dat);
+	// TODO: wobble
+	//draw_sprite(bmp, bitmaps[I_POINTER], x - 25 + fixtoi(3 * fixcos(itofix(tick << 2))), 44 + menu_choice * step);
+	draw_sprite(bmp, bitmaps[I_POINTER], x - 25, 44 + menu_choice * step);
 }
 
 // gets a string from the user
 // used for getting highscore names
-int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int pos_y, int colour, Tcontrol *pad) {
+int get_string(BITMAP *bmp, char *string, int max_size, int pos_x, int pos_y, int colour, Tcontrol *pad) {
 	int i = 0, c;
-	BITMAP *block = create_bitmap(text_length(f, "w")*max_size + 2, text_height(f) + 2);
+	BITMAP *block = create_bitmap(text_length("w")*max_size + 2, text_height() + 2);
 	char letters[] = "_abcdefghijklmnopqrstuvwxyz {}";
 	int current_letter = 0;
 	int max_letter = strlen(letters) - 1;
@@ -2536,13 +1992,12 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
 
 	blit(bmp, block, pos_x - 1, pos_y - 1, 0, 0, block->w, block->h);
 
-	clear_keybuf();
 	while(1) {
 		cycle_count = 0;
 		string[i] = letters[current_letter];
 		string[i + 1] = '\0';
 		blit(block, bmp, 0, 0, pos_x - 1, pos_y - 1, block->w, block->h);
-		textout_ex(bmp, f, string, pos_x, pos_y, colour, -1);
+		textout_ex(bmp, string, pos_x, pos_y, colour, -1);
 		blit_to_screen(bmp);
 
 		if (pad != NULL) {
@@ -2618,15 +2073,15 @@ int get_string(BITMAP *bmp, char *string, int max_size, FONT *f, int pos_x, int 
 
 // lets the player enter a name for highscore use (or what ever)
 void get_player_name(char *name) {
-	blit(data[INTRO_BG].dat, swap_screen, 0, 0, 0, 0, 160, 120);
+	blit(bitmaps[I_INTRO_BG], swap_screen, 0, 0, 0, 0, 160, 120);
 	transform_bitmap(swap_screen, -1);
 	textout_outline_center(swap_screen, "Congratulations,", 80, 8);
 	textout_outline_center(swap_screen, "You've got", 80, 19);
 	textout_outline_center(swap_screen, "a high score!", 80, 30);
 	textout_outline_center(swap_screen, "Enter your name:", 80, 55);
 	blit_to_screen(swap_screen);
-	fade_in_pal(100);
-	get_string(swap_screen, name, 10, data[THE_FONT].dat, 50, 80, 4, &ctrl);
+	fade_in_pal(swap_screen, 100);
+	get_string(swap_screen, name, 10, 50, 80, 4, &ctrl);
 }
 
 // title and menu
@@ -2636,12 +2091,12 @@ int do_main_menu() {
 	int tick = 0;
 
 	log2file("\nRunning main menu:");
+	set_window_title("MAIN MENU");
 
 	draw_title(swap_screen, tick);
 	blit_to_screen(swap_screen);
-	fade_in_pal(100);
+	fade_in_pal(swap_screen, 100);
 
-	clear_keybuf();
 	cycle_count = 0;
 	while(status == GS_OK) {
 		// let other processes play
@@ -2652,9 +2107,6 @@ int do_main_menu() {
 		while(cycle_count > 0) {
 			logic_count ++;
 			tick ++;
-
-			// poll music
-			if (got_sound) al_poll_duh(dp);
 
 			scroll_scroller(&hscroll, -1);
 			if (!scroller_is_visible(&hscroll)) restart_scroller(&hscroll);
@@ -2670,22 +2122,27 @@ int do_main_menu() {
 					if (menu_choice == 1) {
 						log2file(" play selected");
 						status = GS_PLAY;
-						play_sound(sfx[SMPL_MENU]);
+						play_sound_id(S_MENU);
 					}
 					if (menu_choice == 2) {
 						log2file(" scores selected");
 						status = GS_SCORES;
-						play_sound(sfx[SMPL_MENU]);
+						play_sound_id(S_MENU);
 					}
 					if (menu_choice == 3) {
 						log2file(" edit selected");
+#if ENABLE_EDITOR
 						status = GS_EDIT;
-						play_sound(sfx[SMPL_MENU]);
+						play_sound_id(S_MENU);
+#else
+						play_sound_id(S_STOMP);
+#endif
 					}
+
 					if (menu_choice == 4) {
 						log2file(" quit selected");
 						status = GS_QUIT_MENU;
-						play_sound(sfx[SMPL_MENU]);
+						play_sound_id(S_MENU);
 					}
 					count = 10;
 				}
@@ -2697,7 +2154,7 @@ int do_main_menu() {
 						status = GS_QUIT_MENU;
 					}
 					else menu_choice = 4;
-					play_sound(sfx[SMPL_MENU]);
+					play_sound_id(S_MENU);
 					count = 10;
 				}
 
@@ -2705,13 +2162,13 @@ int do_main_menu() {
 				if (key[KEY_UP] || is_up(&ctrl)) { 
 					menu_choice --; 
 					if (menu_choice < 1) menu_choice = 4;
-					play_sound(sfx[SMPL_MENU]); 
+					play_sound_id(S_MENU); 
 					count = 10; 
 				}
 				if (key[KEY_DOWN] || is_down(&ctrl)) {
 					menu_choice ++; 
 					if (menu_choice > 4) menu_choice = 1;
-					play_sound(sfx[SMPL_MENU]); 
+					play_sound_id(S_MENU); 
 					count = 10; 
 				}
 			}
@@ -2720,10 +2177,26 @@ int do_main_menu() {
 			if (!is_any(&ctrl) && !key[KEY_UP] && !key[KEY_ESC] && !key[KEY_DOWN] && !key[KEY_SPACE] && !key[KEY_ENTER]) count = 0;
 
 			// shortcuts to gfx modes
-			if (key[KEY_1]) { while(key[KEY_1]); switch_gfx_mode(GFX_AUTODETECT_WINDOWED, 160, 120); }
-			if (key[KEY_2]) { while(key[KEY_2]); switch_gfx_mode(GFX_AUTODETECT_WINDOWED, 320, 240); }
-			if (key[KEY_3]) { while(key[KEY_3]); switch_gfx_mode(GFX_AUTODETECT_WINDOWED, 640, 480); }
-			if (key[KEY_4]) { while(key[KEY_4]); switch_gfx_mode(GFX_AUTODETECT_FULLSCREEN, 640, 480); }
+			if (key[KEY_1]) {
+				while(key[KEY_1])
+					update_sdl_keyboard();
+				SetZoom(1);
+			}
+			if (key[KEY_2]) {
+				while(key[KEY_2])
+					update_sdl_keyboard();
+				SetZoom(2);
+			}
+			if (key[KEY_3]) {
+				while(key[KEY_3])
+					update_sdl_keyboard();
+				SetZoom(3);
+			}
+			if (key[KEY_4]) {
+				while(key[KEY_4])
+					update_sdl_keyboard();
+				ToggleFullScreen();
+			}
 
 			cycle_count --;
 		}
@@ -2734,12 +2207,13 @@ int do_main_menu() {
 		blit_to_screen(swap_screen);
 	}
 
+#if ENABLE_EDITOR
 	// user selected EDIT
 	if (status == GS_EDIT) {
 		stop_music();
 		fix_gui_colors();
 		log2file("\nEntering editor:");
-		fade_out_pal(100);
+		fade_out_pal(swap_screen, 100);
 
 		// create an empty map for the user
 		log2file(" creating empty map");
@@ -2757,41 +2231,44 @@ int do_main_menu() {
 			reset_particles(particle, MAX_PARTICLES);
 			reset_bullets(bullet, MAX_BULLETS);
 			
-			editing = TRUE;
+			editing = true;
 			set_edit_mode(EDIT_MODE_DRAW);
 			set_edit_path_and_file("new.map");
 
 			draw_frame(swap_screen, 1);
 			blit_to_screen(swap_screen);
-			fade_in_pal(100);
+			fade_in_pal(swap_screen, 100);
 			status = play();
 			deinit_map();
 		}
 		else {
 			log2file(" *** failed");
 		}
-		if (got_sound) start_music(MOD_MENU_SONG);
+		start_music(MOD_MENU_SONG);
 	}
-	else if (status == GS_PLAY) {  //// user selected PLAY
+	else
+#endif
+	if (status == GS_PLAY) {  //// user selected PLAY
 		int level = 0;
 
 		log2file("\nStarting new game:");
-		fade_out_pal(100);
+		fade_out_pal(swap_screen, 100);
 
 		game_status = GS_OK;
-		editing = FALSE;
+		editing = false;
 		new_game(1);
 
 		// select starting level
 		if (options.max_levels && playing_original_game) {
 			level = select_starting_level() - 1;
-			fade_out_pal(100);
+			fade_out_pal(swap_screen, 100);
 
 			if (level == -2) {  // esc
 				log2file(" cancelled");
 				game_status = status = GS_QUIT_GAME;
 			}
 
+#ifdef ENABLE_SHOOTER
 			if (level == -101) {  // shooter
 				log2file(" shooter selected");
 				stop_music();
@@ -2799,8 +2276,8 @@ int do_main_menu() {
 				game_status = status = GS_QUIT_GAME;
 				start_music(MOD_MENU_SONG);
 			}
-
-		}  
+#endif
+		}
 
 		// start playing
 		while(game_status == GS_OK || game_status == GS_LEVEL_DONE) {
@@ -2811,14 +2288,14 @@ int do_main_menu() {
 			}
 			else {
 				log2file(" starting level <%s>", level_files[level]);
+#ifdef ENABLE_EDITOR
 				set_edit_path_and_file(level_files[level]);
+#endif
 				new_level(level_files[level], -1, 1);
 			}
 
-			if (got_sound) {
-				if (map->boss_level) start_music(MOD_BOSS_SONG);
-				else start_music(MOD_LEVEL_SONG);
-			}
+			if (map->boss_level) start_music(MOD_BOSS_SONG);
+			else start_music(MOD_LEVEL_SONG);
 
 			// actual game starts here
 			show_lets_go();
@@ -2835,23 +2312,22 @@ int do_main_menu() {
 				}
 				else {
 					game_status = GS_OK;
-					fade_out_pal(200);
+					fade_out_pal(swap_screen, 200);
 				}
 			}
 			else if (status == GS_QUIT_GAME) {
 				log2file(" player quit");
-				if (got_sound) stop_music();
-				fade_out_pal(100);
-				if (got_sound) start_music(MOD_MENU_SONG);
+				stop_music();
+				fade_out_pal(swap_screen, 100);
+				start_music(MOD_MENU_SONG);
 			}
 			else {
-				PACKFILE *pf;
 #ifdef __unix__
 				char filename[512];
 				char *homedir = get_homedir();
 #endif
 				log2file(" level complete");
-				if (got_sound) stop_music();
+				stop_music();
 				if (level < MAX_LEVELS && playing_original_game) {
 					int i;
 					int ace = 1;
@@ -2880,22 +2356,18 @@ int do_main_menu() {
 				if (level > options.max_levels && game_status != GS_GAME_COMPLETE) {
 					options.max_levels = level;
 				}
-				fade_out_pal(100);
+				fade_out_pal(swap_screen, 100);
 
 				// save options
 				log2file(" saving options");
 #ifdef __unix__
 				snprintf(filename, sizeof(filename),
-					"%s/.alex4/alex4.sav",
+					"%s/.alex4/config",
 					homedir? homedir:".");
-				pf = pack_fopen(filename, "wp");
 #else
-				pf = pack_fopen("alex4.sav", "wp");
+				strcpy(filename, "config.ini");
 #endif
-				if (pf) {
-					save_options(&options, pf);
-					pack_fclose(pf);
-				}
+				save_options(&options, filename);
 			}
 		}
 
@@ -2909,8 +2381,9 @@ int do_main_menu() {
 			}
 			else { // game complete
 				if (playing_original_game) {
+					set_window_title("OUTRO");
 					start_music(MOD_OUTRO_SONG);
-					run_script((char *)data[SCR_OUTRO].dat, data);
+					run_script(SCR_OUTRO);
 					stop_music();
 				}
 				else {
@@ -2928,7 +2401,7 @@ int do_main_menu() {
 
 			// check if player got a high score
 			if (qualify_hisc_table(hisc_table, post)) {
-				fade_out_pal(100);
+				fade_out_pal(swap_screen, 100);
 
 				log2file(" player qualified for highscore (%d, %d)", post.level, post.score);
 
@@ -2940,7 +2413,7 @@ int do_main_menu() {
 				sort_hisc_table(hisc_table);
 			}
 
-			if (got_sound) start_music(MOD_MENU_SONG);
+			start_music(MOD_MENU_SONG);
 			status = GS_SCORES;									
 		}
 		
@@ -2949,63 +2422,71 @@ int do_main_menu() {
 	// show highscores? 
 	// can be entered from both menu and end of game
 	if (status == GS_SCORES) {
-		fade_out_pal(100);
+		fade_out_pal(swap_screen, 100);
 		log2file(" showing scores");
 		show_scores(0, hisc_table);
+#ifdef ENABLE_SHOOTER
 		if (options.one_hundred) {
 			show_scores(1, hisc_table_space);
 		}
+#endif
 	}
 	
 	// user quit
 	if (status == GS_QUIT_MENU) {
 		stop_music();
-		fade_out_pal(100);
+#ifndef NO_CREDITS
+		fade_out_pal(swap_screen, 100);
 		// show bye bye screen
-		blit(data[INTRO_BG].dat, swap_screen, 0, 0, 0, 0, 160, 120);
+		blit(bitmaps[I_INTRO_BG], swap_screen, 0, 0, 0, 0, 160, 120);
 		transform_bitmap(swap_screen, -1);
-		textout_outline_center(swap_screen, "Thanks for playing!", 80, 20);
-		textout_outline_center(swap_screen, "Design, Code, GFX:", 80, 48);
-		textout_outline_center(swap_screen, "Johan Peitz", 80, 60);
-		textout_outline_center(swap_screen, "MUSIC, SFX:", 80, 78);
-		textout_outline_center(swap_screen, "Anders Svensson", 80, 90);
+		textout_outline_center(swap_screen, "Thanks for playing!", 80, 12);
+		textout_outline_center(swap_screen, "Design, Code, GFX:", 80, 40);
+		textout_outline_center(swap_screen, "Johan Peitz", 80, 52);
+		textout_outline_center(swap_screen, "MUSIC, SFX:", 80, 66);
+		textout_outline_center(swap_screen, "Anders Svensson", 80, 80);
+		textout_outline_center(swap_screen, "SDL2 port, maintenance", 80, 94);
+		textout_outline_center(swap_screen, "carstene1ns", 80, 106);
 		blit_to_screen(swap_screen);
-		fade_in_pal(100);
+		fade_in_pal(swap_screen, 100);
 		cycle_count = 0;
-		while(!key[KEY_ESC] && cycle_count < 200)
+		while(!key[KEY_ESC] && cycle_count < 200) {
+			update_sdl_keyboard();
 			rest(50);
-		fade_out_pal(100);
-		clear(screen);
+		}
+#endif
+		fade_out_pal(swap_screen, 100);
+		clear_screen();
 	}
 
 	return status;
 }
 
 // main
-int main(int argc, char **argv) {   
+int main(int argc, char **argv) {
 	int i;
 	char full_path[1024];
 #ifndef __unix__
-	char working_directory[1024];
+	char *working_directory;
 #else
 	char *homedir = get_homedir();
 #endif
 
-	// init allegro
-	allegro_init();
+	// init
+	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 
 #ifdef __unix__
 	// start logfile
 	snprintf(full_path, sizeof(full_path), "%s/.alex4",
 		homedir? homedir:".");
 	check_and_create_dir(full_path);
-	snprintf(full_path, sizeof(full_path), "%s/.alex4/log.txt",
-		homedir? homedir:".");
+	strcat(full_path, "/log.txt");
 	log_fp = fopen(full_path, "wt");
 #else
 	// get working directory
 	get_executable_name(full_path, 1024);
-	replace_filename(working_directory, full_path, "", 1024);
+	working_directory = strdup(full_path)
+	working_directory = dirname(working_directory);
 	chdir(working_directory);
 
 	// start logfile
@@ -3022,36 +2503,37 @@ int main(int argc, char **argv) {
 	}
 #ifndef __unix__
 	log2file("Working directory is:\n   %s", working_directory);
+	free(working_directory);
 #endif
 
 	// test wether to play real game
 	// or custom levels
-	if (argc == 1) playing_original_game = TRUE;
-	else playing_original_game = FALSE;
+	if (argc == 1) playing_original_game = true;
+	else playing_original_game = false;
 
 	// init game
 	if (init_game((playing_original_game ? "maps from datafile please" : argv[1]))) {
+#ifndef NO_INTRO
 		if (playing_original_game) {
+			set_window_title("INTRO");
 			start_music(MOD_INTRO_SONG);
-			if (run_script((char *)data[SCR_INTRO].dat, data) < 0) {
-				fade_out_pal(100);
-			}
+			run_script(SCR_INTRO);
 			stop_music();
 		}
-		if (got_sound) start_music(MOD_MENU_SONG);
+#endif
+		start_music(MOD_MENU_SONG);
 		while(do_main_menu() != GS_QUIT_MENU);
 	}
 	else {
 		log2file("*** init failed!");
-		allegro_message("ALEX4:\nFailed to start game.");
+		msg_box("ALEX4:\nFailed to start game.");
 	}
 
 	// tidy up
 	uninit_game();
-	allegro_exit();
 	log2file("\nDone...\n");
 	if (log_fp)
 		fclose(log_fp);
 
 	return 0;
-} END_OF_MAIN() 
+}
