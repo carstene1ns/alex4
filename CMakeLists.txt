@@ -46,8 +46,7 @@ target_include_directories(iniparser
 # alex4
 
 add_executable(alex4
-	src/main.c
-	src/main.h
+	src/alex4.h
 	src/actor.c
 	src/actor.h
 	src/bullet.c
@@ -76,12 +75,14 @@ add_executable(alex4
 	src/token.h
 	src/unix.c
 	src/unix.h
-	src/sdl_wrapper.c
-	src/sdl_wrapper.h
 	src/sound.c
 	src/sound.h
 	src/misc.c
 	src/misc.h
+	src/main.c
+	src/main.h
+	src/sdl_port.c
+	src/sdl_port.h
 )
 
 # optional
