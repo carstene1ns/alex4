@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -27,15 +27,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if defined(__DECC) && defined(VMS)
-#include <unixlib.h>
-static char *vms_to_unix_buffer = NULL;
-static int convert_vms_to_unix(char *vms_dir_name)
-{
-	vms_to_unix_buffer = vms_dir_name;
-}
-#endif
-
 char *get_homedir(void)
 {
 	struct passwd *pw;
@@ -51,14 +42,7 @@ char *get_homedir(void)
 		return NULL;
 	}
 
-#if defined(__DECC) && defined(VMS)
-	/* Convert The OpenVMS Formatted "$HOME" Directory Path Into Unix
-	   Format. */
-	decc$from_vms(pw->pw_dir, convert_vms_to_unix, 1);
-	return vms_to_unix_buffer;
-#else
 	return pw->pw_dir;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -72,11 +56,7 @@ int check_and_create_dir(const char *name)
 		if (errno == ENOENT)
 		{
 			/* doesn't exist letts create it ;) */
-#ifdef BSD43
-			if (mkdir(name, 0775))
-#else
-				if (mkdir(name, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH))
-#endif
+			if (mkdir(name, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH))
 				{
 					fprintf(stderr, "Error creating dir %s", name);
 					perror(" ");
@@ -94,16 +74,13 @@ int check_and_create_dir(const char *name)
 	else
 	{
 		/* file exists check it's a dir otherwise yell about it */
-#ifdef BSD43
-		if (!(S_IFDIR & stat_buffer.st_mode))
-#else
-			if (!S_ISDIR(stat_buffer.st_mode))
-#endif
-			{
-				fprintf(stderr,"Error %s exists but isn't a dir\n", name);
-				return -1;
-			}
+		if (!S_ISDIR(stat_buffer.st_mode))
+		{
+			fprintf(stderr,"Error %s exists but isn't a dir\n", name);
+			return -1;
+		}
 	}
 	return 0;
 }
+
 #endif
