@@ -561,16 +561,27 @@ void transform_bitmap(BITMAP *bmp, int steps) {
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
+bool fullscreen = false;
+int zoom = 1;
+
 void make_sdl_window(Toptions *o) {
+	int window_flags = 0;
+	if (o->fullscreen) {
+		window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		fullscreen = true;
+	}
 	window = SDL_CreateWindow(GAME_TITLE_STR,
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		o->width, o->height, 0);
+		o->width, o->height, window_flags);
 	int renderer_flags = SDL_RENDERER_TARGETTEXTURE;
 	if (o->use_vsync)
 		renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
 	renderer = SDL_CreateRenderer(window, -1, renderer_flags);
 	SDL_RenderSetLogicalSize(renderer, SCREEN_W, SCREEN_H);
 
+	zoom = MIN(o->width / SCREEN_W, o->height / SCREEN_H);
+
+	// important: blocky sharp images
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 }
 
@@ -584,37 +595,49 @@ void set_window_title(const char *title) {
 		SDL_SetWindowTitle(window, GAME_TITLE_STR);
 }
 
-
 void rest(int ms) {
 	SDL_Delay(ms);
 }
 
 int GetScreenW() {
-	return SCREEN_W;
+	int w;
+	SDL_GetWindowSize(window, &w, NULL);
+	return w;
 }
 int GetScreenH() {
-	return SCREEN_H;
+	int h;
+	SDL_GetWindowSize(window, NULL, &h);
+	return h;
 }
 
-bool fullscreen = false;
-int zoom = 1;
+void SetZoom(int z, Toptions *o) {
+	if(fullscreen) ToggleFullScreen(o);
 
-void SetZoom(int z) {
-	if(fullscreen) ToggleFullScreen();
+	zoom = CLAMP(1, z, 10);
+	o->width = SCREEN_W * zoom;
+	o->height = SCREEN_H * zoom;
 
-	SDL_SetWindowSize(window, SCREEN_W * z, SCREEN_H * z);
-	zoom = z;
+	SDL_SetWindowSize(window, o->width, o->height);
 }
 
-void ToggleFullScreen() {
+void IncreaseZoom(Toptions *o) {
+	SetZoom(zoom + 1, o);
+}
+void DecreaseZoom(Toptions *o) {
+	SetZoom(zoom - 1, o);
+}
+
+void ToggleFullScreen(Toptions *o) {
 	Uint32 flags = SDL_GetWindowFlags(window);
 
 	if (flags & SDL_WINDOW_FULLSCREEN_DESKTOP) {
 		SDL_SetWindowFullscreen(window, 0);
 		fullscreen = false;
-		SetZoom(zoom);
+		SetZoom(zoom, o);
 	} else {
 		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 		fullscreen = true;
 	}
+
+	o->fullscreen = fullscreen;
 }

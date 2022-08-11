@@ -43,8 +43,8 @@ typedef int32_t fixed;
 #define SGN(x)       (((x) >= 0) ? 1 : -1)
 #define CLAMP(x,y,z) MAX((x), MIN((y), (z)))
 
-#define SCREEN_W 640
-#define SCREEN_H 480
+#define SCREEN_W 160
+#define SCREEN_H 120
 #define TRUE true
 #define FALSE false
 
@@ -76,9 +76,6 @@ void clear_to_color(BITMAP* bmp, int color);
 void draw_character_ex(BITMAP *bmp, BITMAP *sprite, int x, int y, int color);
 
 void draw_tile(BITMAP *bmp, int tile_id, int x, int y); 
-
-void SetZoom(int z);
-void ToggleFullScreen();
 
 // text
 void prepare_font(int id);
@@ -145,6 +142,10 @@ void fix_gui_colors();
 
 void make_sdl_window(Toptions *o);
 void set_window_title(const char *title);
+
+void IncreaseZoom(Toptions *o);
+void DecreaseZoom(Toptions *o);
+void ToggleFullScreen(Toptions *o);
 
 void transform_bitmap(BITMAP *bmp, int steps);
 

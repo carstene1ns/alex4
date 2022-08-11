@@ -271,8 +271,8 @@ void draw_frame(BITMAP *bmp, int _status_bar) {
 	}
 #if ENABLE_EDITOR
 	else { 		/////////////// EDIT stats
-		int mx = GetMouseX() / (GetScreenW() / 160);
-		int my = GetMouseY() / (GetScreenH() / 120);
+		int mx = GetMouseX() / (GetScreenW() / SCREEN_W);
+		int my = GetMouseY() / (GetScreenH() / SCREEN_H);
 		draw_edit_mode(bmp, map, mx, my);
 	}
 #endif
@@ -2180,22 +2180,22 @@ int do_main_menu() {
 			if (key[KEY_1]) {
 				while(key[KEY_1])
 					update_sdl_keyboard();
-				SetZoom(1);
+				IncreaseZoom(&options);
 			}
 			if (key[KEY_2]) {
 				while(key[KEY_2])
 					update_sdl_keyboard();
-				SetZoom(2);
+				DecreaseZoom(&options);
 			}
 			if (key[KEY_3]) {
 				while(key[KEY_3])
 					update_sdl_keyboard();
-				SetZoom(3);
+				// unused
 			}
 			if (key[KEY_4]) {
 				while(key[KEY_4])
 					update_sdl_keyboard();
-				ToggleFullScreen();
+				ToggleFullScreen(&options);
 			}
 
 			cycle_count --;
