@@ -50,7 +50,7 @@ move ball -2 0
 run 10
 
 # drumcans fly
-play_sample 8 100 1000 0
+play_sample crush 100 1000 0
 move drumcan1 -2 -1
 move drumcan2 -1 -2
 
@@ -88,7 +88,7 @@ speak 80 50 right 2 "Thank you for" "saving me."
 blit
 wait 2000
 
-play_sample 21 50 1000 1
+play_sample engine 50 1000 1
 
 # talk
 show_bmp buffer
@@ -104,8 +104,8 @@ save_buffer
 # leave
 #######################################
 
-stop_sample 21
-play_sample 21 100 1000 1
+stop_sample engine
+play_sample engine 100 1000 1
 
 move ufo0 0 1
 move ufo1 0 1
@@ -119,7 +119,7 @@ move beam 0 0
 
 run 50
 
-play_sample 25 100 1000 1
+play_sample energy 100 1000 1
 move beam 0 1
 
 run 90
@@ -141,13 +141,13 @@ move alex 0 -1
 
 run 100
 
-stop_sample 25
+stop_sample energy
 
 move ufo0 0 -1
 move ufo1 0 -1
 
-stop_sample 21
-play_sample 21 50 1000 1
+stop_sample engine
+play_sample engine 50 1000 1
 
 run 30
 
@@ -156,7 +156,7 @@ move ufo1 0 0
 move beam 0 0
 move alex 0 0
 
-stop_sample 21
+stop_sample engine
 
 # talk
 speak 80 50 right 1 "I'll save you!"
@@ -164,7 +164,7 @@ blit
 wait 1000
 
 # ship enters
-play_sample 23 100 1000 0
+play_sample ship 100 1000 0
 set ship0 160 64 left
 move ship0 -2 0 
 run 43
@@ -183,7 +183,7 @@ delete lola
 run 50
 
 # ship leaves
-play_sample 23 100 1000 0
+play_sample ship 100 1000 0
 move ship1 -1 0
 run 16
 move ship1 -2 -1
@@ -214,7 +214,7 @@ fade_out
 show_bmp treetops
 save_buffer
 blit
-play_sample 21 100 1000 1
+play_sample engine 100 1000 1
 fade_in
 
 set ufo -32 120 left
@@ -222,12 +222,12 @@ move ufo 1 -1
 
 run 150
 
-play_sample 23 100 600 0
+play_sample ship 100 600 0
 set ship1 -32 80 right
 move ship1 2 -1
 
 run 100
-stop_sample 21 
+stop_sample engine
 
 # talk
 text 80 60 left 1 " The end  "

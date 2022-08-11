@@ -32,13 +32,13 @@ blit
 wait 3000
 
 # talk 
-play_sample 22 20 1000 1
+play_sample chopper 20 1000 1
 show_bmp buffer
 speak 80 60 right 3 "Probably... Wait!" "What's that sound?" "It sounds like..."
 blit
 wait 3000
-stop_sample 22
-play_sample 22 50 1000 1
+stop_sample chopper
+play_sample chopper 50 1000 1
 
 show_bmp buffer
 blit
@@ -47,7 +47,7 @@ blit
 delete alex
 delete lola
 fade_out
-stop_sample 22
+stop_sample chopper
 
 
 
@@ -59,7 +59,7 @@ stop_sample 22
 show_bmp treetops
 save_buffer
 blit
-play_sample 22 80 1000 1
+play_sample chopper 80 1000 1
 fade_in
 
 # enter chopper
@@ -83,7 +83,7 @@ run 35
 
 # clean up
 fade_out
-stop_sample 22
+stop_sample chopper
 delete line
 delete cage1
 delete helicopter
@@ -102,14 +102,14 @@ set cage2 80 -38 left
 set alex 48 64 right
 set lola 80 64 left
 run 1
-play_sample 22 50 1000 1
+play_sample chopper 50 1000 1
 fade_in
 
 # lower cage
 move cage2 0 4
 move chain 0 4
 run 24
-play_sample 19 100 1000 0
+play_sample impact 100 1000 0
 
 # talk
 speak 80 50 right 1 "Alex!"
@@ -129,7 +129,8 @@ run 48
 
 # clean up
 fade_out
-stop_sample 22
+stop_sample chopper
+stop_sample impact
 delete cage2
 delete chain
 delete lola
@@ -148,7 +149,7 @@ set helicopter 60 30 left
 set cage3 89 122 left
 set line cage3 6 0 helicopter 35 10
 run 2
-play_sample 22 80 1000 1
+play_sample chopper 80 1000 1
 fade_in
 
 # raise cage
@@ -167,7 +168,7 @@ run 130
 
 # clean up
 fade_out
-stop_sample 22
+stop_sample chopper
 delete helicopter
 delete cage3
 delete line
@@ -188,7 +189,7 @@ fade_in
 speak 100 80 right 2 "Please! You must" "help me find Lola!"
 blit 
 wait 750
-play_sample 24 100 1000 0
+play_sample talk 100 1000 0
 wait 2250
 
 # talk
@@ -200,7 +201,7 @@ save_buffer
 speak 100 80 right 3 "Let's go before they" "make a pair of" "shoes out of her!"
 blit 
 wait 750
-play_sample 24 100 1000 0
+play_sample talk 100 1000 0
 wait 3250
 
 # clean up

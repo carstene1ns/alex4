@@ -350,6 +350,24 @@ void forget_sound(int id) {
 	}
 }
 
+int sample_to_id(char *sample) {
+	int id;
+
+	if (!stricmp(sample, "chopper")) id = S_CHOPPER;
+	else if (!stricmp(sample, "talk")) id = S_TALK;
+	else if (!stricmp(sample, "impact")) id = S_IMPACT;
+	else if (!stricmp(sample, "crush")) id = S_CRUSH;
+	else if (!stricmp(sample, "engine")) id = S_ENGINE;
+	else if (!stricmp(sample, "energy")) id = S_ENERGY;
+	else if (!stricmp(sample, "ship")) id = S_SHIP;
+	else {
+		printf("unknown sample \"%s\"", sample);
+		return -1;
+	}
+
+	return id;
+}
+
 void cmd_play_sample(Ttoken *t) {
 	int vol = 100;
 	int loop = 0;
@@ -371,17 +389,21 @@ void cmd_play_sample(Ttoken *t) {
 			}
 		}
 
-		id = atoi(t->word);
-		if (remember_sound(id)) play_sound_id_ex(id, vol, freq, loop);
-		else log2file("*** cannot play sample %d, buffer full", id);
+		id = sample_to_id(t->word);
+		if (id > 0) {
+			if (remember_sound(id)) play_sound_id_ex(id, vol, freq, loop);
+			else log2file("*** cannot play sample %d, buffer full", id);
+		}
 	}
 }
 
 void cmd_stop_sample(Ttoken *t) {
 	if (t != NULL) {
-		int id = atoi(t->word);
-		stop_sound_id(id);
-		forget_sound(id);
+		int id = sample_to_id(t->word);
+		if(id > 0) {
+			stop_sound_id(id);
+			forget_sound(id);
+		}
 	}
 }
 
