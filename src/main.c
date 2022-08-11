@@ -1972,9 +1972,9 @@ void draw_title(BITMAP *bmp, int tick) {
 	textout_ex(bmp, "QUIT", x+1, y+1, 1, -1);
 	textout_ex(bmp, "QUIT", x, y, 4, -1);
 
-	// TODO: wobble
+	// FIXME: wobble
 	//draw_sprite(bmp, bitmaps[I_POINTER], x - 25 + fixtoi(3 * fixcos(itofix(tick << 2))), 44 + menu_choice * step);
-	draw_sprite(bmp, bitmaps[I_POINTER], x - 25, 44 + menu_choice * step);
+	draw_sprite(bmp, bitmaps[I_POINTER], x - 25 + (int)(3 * cosf((tick << 2)*(float)M_PI/180)), 44 + menu_choice * step);
 }
 
 // gets a string from the user
@@ -2107,6 +2107,7 @@ int do_main_menu() {
 		while(cycle_count > 0) {
 			logic_count ++;
 			tick ++;
+			if (tick > 360) tick = 0;
 
 			scroll_scroller(&hscroll, -1);
 			if (!scroller_is_visible(&hscroll)) restart_scroller(&hscroll);

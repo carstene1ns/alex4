@@ -180,6 +180,12 @@ if(SDL2_FOUND AND SDL2_mixer_FOUND)
 endif()
 
 target_link_libraries(alex4 miniz iniparser SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+if(UNIX)
+	target_link_libraries(alex4 -lm)
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		target_compile_options(alex4 PRIVATE "-fno-math-errno")
+	endif()
+endif()
 
 # installation
 
