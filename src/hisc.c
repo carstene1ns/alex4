@@ -18,7 +18,8 @@
  **************************************************************/
 
 #include <string.h>
-#include "sdl_port.h"
+#include <stdlib.h>
+#include "port.h"
 #include "hisc.h"
 
 // creates a table to work with

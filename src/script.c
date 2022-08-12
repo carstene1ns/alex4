@@ -19,7 +19,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "sdl_port.h"
+#include <stdlib.h>
+#include "port.h"
 #include "script.h"
 #include "timer.h"
 #include "token.h"
@@ -95,7 +96,7 @@ void esc_rest(int millis) {
 	int count = 0;
 	while(count < clicks && !key[KEY_ESC]) {
 		cycle_count = 0;
-		update_sdl_keyboard();
+		update_platform_controls();
 		count ++;
 		while(!cycle_count)
 			rest(20);
@@ -509,7 +510,7 @@ void cmd_run(Ttoken *t) {
 		while(cycle_count > 0 && loops && !script_done) {
 			logic_count ++;
 
-			update_sdl_keyboard();
+			update_platform_controls();
 
 			// update objects
 			o = objects;

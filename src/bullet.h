@@ -20,7 +20,7 @@
 #ifndef BULLET_H
 #define BULLET_H
 
-#include "sdl_port.h"
+#include "port.h"
 #include "map.h"
 #include "particle.h"
 

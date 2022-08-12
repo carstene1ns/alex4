@@ -20,7 +20,7 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
-#include "sdl_port.h"
+#include "port.h"
 #include "map.h"
 
 // maximum number of particles at anytime

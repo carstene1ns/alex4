@@ -22,8 +22,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <libgen.h>
+#include <stdlib.h>
+#include <math.h>
 #include "alex4.h"
-#include "sdl_port.h"
+#include "port.h"
 #include "hisc.h"
 #include "timer.h"
 #include "map.h"
@@ -318,7 +320,7 @@ int init_game(const char *map_file) {
 	// init gfx
 	log2file(" entering gfx mode set in config (%dx%d %s)",
 		options.width, options.height, options.fullscreen ? "full" : "win");
-	make_sdl_window(&options);
+	make_window(&options);
 
 	// set win title (no! really???)
 	log2file(" setting window title");
@@ -451,7 +453,7 @@ int init_game(const char *map_file) {
 	// init control
 	log2file(" initializing controls and joystick/gamepad");
 	init_control(&ctrl);
-	update_sdl_keyboard();
+	update_platform_controls();
 
 	// install sound
 	log2file(" installing sound/music");
@@ -459,12 +461,10 @@ int init_game(const char *map_file) {
 	log2file("  *** disabled");
 	got_sound = 0;
 #else
-	Mix_Init(MIX_INIT_MOD);
-	if(Mix_OpenAudio(options.sound_freq, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, options.buffer_size) != 0) {
+	if(!init_sound(&options)) {
 		log2file("  *** failed");
 		got_sound = 0;
 	} else {
-		Mix_AllocateChannels(16);
 		got_sound = 1;
 
 		load_sfx();
@@ -484,9 +484,9 @@ int init_game(const char *map_file) {
 	wait_key(2);
 	fade_out_pal(swap_screen, 100);
 
-
 	init_ok = 1;
 	log2file(" init OK!");
+
 	return true;
 }
 
@@ -494,8 +494,8 @@ int init_game(const char *map_file) {
 void uninit_game() {
 	int i;
 	FILE *pf;
-#ifdef __unix__
 	char filename[512];
+#ifdef __unix__
 	char *homedir = get_homedir();
 #endif
 
@@ -531,7 +531,7 @@ void uninit_game() {
 		save_hisc_table(hisc_table, filename);
 #ifdef ENABLE_SHOOTER
 #ifdef __unix__
-		strcat(filename, "-shooter")
+		strcat(filename, "-shooter");
 #else
 		strcpy(filename, "highscore-shooter.dat");
 #endif
@@ -544,14 +544,13 @@ void uninit_game() {
 		stop_music();
 		log2file(" freeing sounds");
 		free_sfx();
-		Mix_CloseAudio();
+		uninit_sound();
 	}
 
-	log2file(" exiting SDL");
-#ifndef NO_SOUND
-	Mix_Quit();
-#endif
-	SDL_Quit();
+	log2file(" stopping timers");
+	stop_timers();
+
+	uninit_platform();
 }
 
 // inits the player on a map
@@ -656,7 +655,7 @@ void show_game_over() {
 		// do logic
 		while(cycle_count > 0) {
 			logic_count ++;
-			update_sdl_keyboard();
+			update_platform_controls();
 
 			// move text
 			if (mode == 0 || mode == 2) x += 4;
@@ -1765,7 +1764,7 @@ int do_pause_menu(BITMAP *bg) {
 
 	// wait to release esc
 	while(key[KEY_ESC])
-		update_sdl_keyboard();
+		update_platform_controls();
 	
 	// wait for user input
 	while(!done) {
@@ -1804,7 +1803,7 @@ int play(void) {
 		//  do logic
 		while(cycle_count > 0) {
 			logic_count ++;
-			update_sdl_keyboard();
+			update_platform_controls();
 
 			// check if user wants to enter edit mode
 			if (!playing_original_game && !editing) {
@@ -1917,7 +1916,7 @@ int play(void) {
 			if (key[KEY_F12]) {
 				take_screenshot(swap_screen);
 				while(key[KEY_F12])
-					update_sdl_keyboard();
+					update_platform_controls();
 				cycle_count = 0;
 			}
 			
@@ -2180,22 +2179,22 @@ int do_main_menu() {
 			// shortcuts to gfx modes
 			if (key[KEY_1]) {
 				while(key[KEY_1])
-					update_sdl_keyboard();
+					update_platform_controls();
 				IncreaseZoom(&options);
 			}
 			if (key[KEY_2]) {
 				while(key[KEY_2])
-					update_sdl_keyboard();
+					update_platform_controls();
 				DecreaseZoom(&options);
 			}
 			if (key[KEY_3]) {
 				while(key[KEY_3])
-					update_sdl_keyboard();
+					update_platform_controls();
 				// unused
 			}
 			if (key[KEY_4]) {
 				while(key[KEY_4])
-					update_sdl_keyboard();
+					update_platform_controls();
 				ToggleFullScreen(&options);
 			}
 
@@ -2323,8 +2322,8 @@ int do_main_menu() {
 				start_music(MOD_MENU_SONG);
 			}
 			else {
-#ifdef __unix__
 				char filename[512];
+#ifdef __unix__
 				char *homedir = get_homedir();
 #endif
 				log2file(" level complete");
@@ -2452,7 +2451,7 @@ int do_main_menu() {
 		fade_in_pal(swap_screen, 100);
 		cycle_count = 0;
 		while(!key[KEY_ESC] && cycle_count < 200) {
-			update_sdl_keyboard();
+			update_platform_controls();
 			rest(50);
 		}
 #endif
@@ -2474,7 +2473,7 @@ int main(int argc, char **argv) {
 #endif
 
 	// init
-	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
+	init_platform();
 
 #ifdef __unix__
 	// start logfile
@@ -2486,7 +2485,7 @@ int main(int argc, char **argv) {
 #else
 	// get working directory
 	get_executable_name(full_path, 1024);
-	working_directory = strdup(full_path)
+	working_directory = strdup(full_path);
 	working_directory = dirname(working_directory);
 	chdir(working_directory);
 

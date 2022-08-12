@@ -20,11 +20,10 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include "sdl_port.h"
+#include "port.h"
 
 void log2file(const char *format, ...);
 void take_screenshot(BITMAP *bmp);
-void msg_box(const char *str);
 void clear_trailing_whitespace(char *data);
 
 // a little bounding box quickie

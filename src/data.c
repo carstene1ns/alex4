@@ -22,9 +22,10 @@
 #include "data_files.h"
 #undef INSIDE_DATA
 
+#include <stdbool.h>
 #include "miniz.h"
 #include "data.h"
-#include "sdl_port.h"
+#include "port.h"
 
 // data files
 BITMAP **bitmaps;

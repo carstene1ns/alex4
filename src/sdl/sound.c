@@ -17,6 +17,9 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
+#include <SDL_mixer.h>
+#include "port.h"
+
 #include "sound.h"
 #include "misc.h"
 #include "data.h"
@@ -32,10 +35,31 @@ Mix_Music *music = NULL;
 bool sounds_loaded = false;
 bool music_loaded = false;
 
+bool audio_open = false;
+
 #define MAX_VOL 100 // actually MIX_MAX_VOLUME is 128
 #define MAX_PAN 255
 int music_vol = MAX_VOL;
 int sound_vol = MAX_VOL;
+
+bool init_sound(Toptions *o) {
+	Mix_Init(MIX_INIT_MOD);
+	if(Mix_OpenAudio(o->sound_freq, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, o->buffer_size) != 0) {
+		return false;
+	}
+
+	Mix_AllocateChannels(16);
+	audio_open = true;
+	return true;
+}
+
+void uninit_sound() {
+	if (audio_open) {
+		Mix_CloseAudio();
+		audio_open = false;
+	}
+	Mix_Quit();
+}
 
 void ResetChan(int channel) {
 	for(int i = 0; i < S_MAX; i++) {

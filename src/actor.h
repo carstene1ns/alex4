@@ -20,7 +20,7 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 
-#include "sdl_port.h"
+#include "port.h"
 #include "data.h"
 #include "map.h"
 

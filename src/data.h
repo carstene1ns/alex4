@@ -20,9 +20,9 @@
 #ifndef DATA_H
 #define DATA_H
 
-#include "sdl_port.h"
 // the generated header
 #include "data_files.h"
+#include "port.h"
 
 typedef struct _df {
 	void *dat;

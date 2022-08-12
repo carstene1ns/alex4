@@ -17,7 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#include "sdl_port.h"
+#include "port.h"
 #include "control.h"
 
 // "constructor"
@@ -62,7 +62,7 @@ void poll_control(Tcontrol *c) {
 	}
 #endif
 
-	update_sdl_keyboard();
+	update_platform_controls();
 
 	if (key[c->key_up]) c->flags |= K_UP;
 	if (key[c->key_down]) c->flags |= K_DOWN;

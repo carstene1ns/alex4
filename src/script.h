@@ -20,8 +20,6 @@
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
-#include "sdl_port.h"
-
 // struct holding script data
 typedef struct {
 	char name[16];

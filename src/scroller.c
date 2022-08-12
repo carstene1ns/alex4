@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "sdl_port.h"
+#include "port.h"
 #include "scroller.h"
 
 // initiates a scroller

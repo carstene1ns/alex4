@@ -17,6 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
+#include <stdarg.h>
 #include "miniz.h"
 #include "misc.h"
 #include "sound.h"
@@ -55,36 +56,7 @@ void take_screenshot(BITMAP *bmp) {
 		if (number > 999) return;
 	} while(!ok);
 
-	SDL_Surface *tmp = SDL_CreateRGBSurface(0, bmp->w, bmp->h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-	if(!tmp) return;
-
-	SDL_Texture *old = SDL_GetRenderTarget(renderer);
-	SDL_SetRenderTarget(renderer, bmp->tex);
-
-	if(SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_ARGB8888, tmp->pixels, tmp->pitch)) {
-		SDL_SetRenderTarget(renderer, old);
-		SDL_FreeSurface(tmp);
-		return;
-	}
-
-	size_t len;
-	void *png = tdefl_write_image_to_png_file_in_memory(tmp->pixels, bmp->w, bmp->h, 4, &len);
-	SDL_SetRenderTarget(renderer, old);
-	SDL_FreeSurface(tmp);
-	if (!png) return;
-
-	FILE *fp = fopen(buf, "wb");
-	fwrite(png, len, 1, fp);
-	fclose(fp);
-
-	mz_free(png);
-}
-
-// shows a little message
-void msg_box(const char *str) {
-	pause_music(true);
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Alex 4: Message", str, NULL);
-	pause_music(false);
+	take_screenshot_platform(bmp, buf);
 }
 
 // removes trailing white space from a null terminated string

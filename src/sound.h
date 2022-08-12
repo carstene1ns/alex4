@@ -20,8 +20,8 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-#include "sdl_port.h"
-#include <SDL_mixer.h>
+#include <stdbool.h>
+#include "options.h"
 
 void play_sound_id(int id);
 void play_sound_id_ex(int id, int vol, int freq, int loop);
@@ -30,6 +30,9 @@ void stop_sound_id(int id);
 void start_music(int startorder);
 void stop_music(void);
 void pause_music(bool p);
+
+bool init_sound(Toptions *o);
+void uninit_sound();
 
 void load_sfx();
 void free_sfx();

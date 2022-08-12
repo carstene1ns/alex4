@@ -47,6 +47,8 @@ target_include_directories(iniparser
 
 add_executable(alex4
 	src/alex4.h
+	src/main.c
+	src/main.h
 	src/actor.c
 	src/actor.h
 	src/bullet.c
@@ -75,14 +77,19 @@ add_executable(alex4
 	src/token.h
 	src/unix.c
 	src/unix.h
-	src/sound.c
-	src/sound.h
 	src/misc.c
 	src/misc.h
-	src/main.c
-	src/main.h
-	src/sdl_port.c
-	src/sdl_port.h
+	# new ports need to implement these
+	src/sound.h
+	src/port.h
+	# currently, only sdl port available
+	src/sdl/port.c
+	src/sdl/port.h
+	src/sdl/sound.c
+)
+
+target_include_directories(alex4
+	PUBLIC src
 )
 
 # optional

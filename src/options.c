@@ -20,8 +20,7 @@
 #include <stdio.h>
 #include "options.h"
 #include "iniparser.h"
-#include <SDL_mixer.h>
-#include "sdl_port.h"
+#include "port.h"
 
 // helpers
 
@@ -155,7 +154,7 @@ void reset_options(Toptions *o) {
 
 	o->sound_enable = true;
 	o->buffer_size = 1024;
-	o->sound_freq = MIX_DEFAULT_FREQUENCY;
+	o->sound_freq = SOUND_FREQ;
 	o->sample_volume = 100;
 	o->music_volume = 100;
 

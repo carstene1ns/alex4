@@ -20,8 +20,6 @@
 #ifndef SCROLLER_H
 #define SCROLLER_H
 
-#include "sdl_port.h"
-
 // maximum lines in a vertical scroller
 #define MAX_LINES_IN_SCROLLER	512			// used for vert-scrolling
 

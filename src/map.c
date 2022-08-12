@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "alex4.h"
-#include "sdl_port.h"
+#include "port.h"
 #include "map.h"
 #include "timer.h"
 #include "data.h"

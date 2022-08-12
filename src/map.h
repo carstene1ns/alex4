@@ -21,7 +21,7 @@
 #define MAP_H
 
 #include <stdio.h>
-#include "sdl_port.h"
+#include "port.h"
 #include "data.h"
 
 // some directions for expanding/shrinking the map

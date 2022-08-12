@@ -17,7 +17,8 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#include "sdl_port.h"
+#include <stdlib.h>
+#include "port.h"
 #include "actor.h"
 #include "map.h"
 #include "timer.h"

@@ -18,10 +18,11 @@
  **************************************************************/
 
 #include <SDL.h>
-
-#include "sdl_port.h"
+#include <miniz.h>
+#include "../port.h"
 #include "data.h"
 #include "main.h"
+#include "sound.h"
 
 SDL_Window* window;
 SDL_Renderer* renderer;
@@ -429,7 +430,7 @@ int text_height() {
 
 const Uint8 *key;
 
-void update_sdl_keyboard() {
+void update_platform_controls() {
 	SDL_PumpEvents();
 	key = SDL_GetKeyboardState(NULL);
 }
@@ -561,10 +562,18 @@ void transform_bitmap(BITMAP *bmp, int steps) {
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
+void init_platform() {
+	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER);
+}
+
+void uninit_platform() {
+	SDL_Quit();
+}
+
 bool fullscreen = false;
 int zoom = 1;
 
-void make_sdl_window(Toptions *o) {
+void make_window(Toptions *o) {
 	int window_flags = 0;
 	if (o->fullscreen) {
 		window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -640,4 +649,37 @@ void ToggleFullScreen(Toptions *o) {
 	}
 
 	o->fullscreen = fullscreen;
+}
+
+// shows a little message
+void msg_box(const char *str) {
+	pause_music(true);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Alex 4: Message", str, NULL);
+	pause_music(false);
+}
+
+void take_screenshot_platform(BITMAP *bmp, const char *filename) {
+	SDL_Surface *tmp = SDL_CreateRGBSurface(0, bmp->w, bmp->h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+	if(!tmp) return;
+
+	SDL_Texture *old = SDL_GetRenderTarget(renderer);
+	SDL_SetRenderTarget(renderer, bmp->tex);
+
+	if(SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_ARGB8888, tmp->pixels, tmp->pitch)) {
+		SDL_SetRenderTarget(renderer, old);
+		SDL_FreeSurface(tmp);
+		return;
+	}
+
+	size_t len;
+	void *png = tdefl_write_image_to_png_file_in_memory(tmp->pixels, bmp->w, bmp->h, 4, &len);
+	SDL_SetRenderTarget(renderer, old);
+	SDL_FreeSurface(tmp);
+	if (!png) return;
+
+	FILE *fp = fopen(filename, "wb");
+	fwrite(png, len, 1, fp);
+	fclose(fp);
+
+	mz_free(png);
 }

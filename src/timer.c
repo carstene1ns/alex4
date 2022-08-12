@@ -17,7 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#include "sdl_port.h"
+#include "port.h"
 #include "timer.h"
 
 // the variables used by the timers
@@ -27,6 +27,8 @@ volatile int logic_count;
 volatile int lps;
 volatile int cycle_count;
 volatile int game_count;
+
+SDL_TimerID fps_timer, cycle_timer;
 
 // keeps track of frames each second
 Uint32 fps_counter(Uint32 interval, void *param) {
@@ -47,16 +49,19 @@ Uint32 cycle_counter(Uint32 interval, void *param) {
 }
 
 // initiates the timers
-int install_timers() {
-	SDL_InitSubSystem(SDL_INIT_TIMER);
-
-	SDL_AddTimer(1000, fps_counter, NULL);
+bool install_timers() {
 	fps = 0;
 	frame_count = 0;
 	cycle_count = 0;
-	SDL_AddTimer(20, cycle_counter, NULL);
+	game_count = 0;
 
-	game_count ++;
+	fps_timer = SDL_AddTimer(1000, fps_counter, NULL);
+	cycle_timer = SDL_AddTimer(20, cycle_counter, NULL);
 
 	return true;
+}
+
+void stop_timers() {
+	SDL_RemoveTimer(fps_timer);
+	SDL_RemoveTimer(cycle_timer);
 }

@@ -20,7 +20,6 @@
 #ifndef HISC_H
 #define HISC_H
 
-#include "sdl_port.h"
 #include "hisc.h"
 
 // highscore list length

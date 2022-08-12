@@ -17,6 +17,7 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
+#include <stdlib.h>
 #include "particle.h"
 
 // the particles themselves
