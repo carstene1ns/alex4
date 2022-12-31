@@ -43,6 +43,22 @@ target_include_directories(iniparser
 	PUBLIC ext/iniparser
 )
 
+# stb_image
+
+add_library(stb_image STATIC
+	ext/stb_image/stb_image.h
+	ext/stb_image/stb_image.c
+)
+
+target_compile_definitions(stb_image
+	PRIVATE
+		STBI_ONLY_PNG
+)
+
+target_include_directories(stb_image
+	PUBLIC ext/stb_image
+)
+
 # alex4
 
 add_executable(alex4
@@ -186,7 +202,7 @@ if(SDL2_FOUND AND SDL2_mixer_FOUND)
 	message(STATUS "Using SDL2 ${SDL2_VERSION} and SDL2_mixer ${SDL2_mixer_VERSION}.")
 endif()
 
-target_link_libraries(alex4 miniz iniparser SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+target_link_libraries(alex4 stb_image miniz iniparser SDL2::SDL2 SDL2_mixer::SDL2_mixer)
 if(UNIX)
 	target_link_libraries(alex4 -lm)
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

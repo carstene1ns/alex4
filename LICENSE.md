@@ -22,3 +22,12 @@ Copyright (c) 2000-2011 by Nicolas Devillard.
 
 Provided under MIT license, see [iniparser LICENSE](ext/iniparser/LICENSE) for
 details.
+
+--------------------------------------------------------------------------------
+
+# LodePNG
+
+Copyright (c) 2005-2018 Lode Vandevenne
+
+Provided under the zlib License, see [LodePNG LICENSE](ext/lodepng/LICENSE) for
+details.

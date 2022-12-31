@@ -19,6 +19,7 @@
 
 #include <SDL.h>
 #include <miniz.h>
+#include <stb_image.h>
 #include "../port.h"
 #include "data.h"
 #include "main.h"
@@ -63,11 +64,9 @@ BITMAP *create_bitmap(int w, int h) {
 	BITMAP *b = (BITMAP *)malloc(sizeof (BITMAP));
 	b->h = h;
 	b->w = w;
-	b->tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
+	b->tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, w, h);
 
 	if (!b->tex) printf("texture broken: %s\n", SDL_GetError());
-
-	SDL_SetTextureBlendMode(b->tex, SDL_BLENDMODE_BLEND);
 
 	return b; 
 }
@@ -78,28 +77,40 @@ void destroy_bitmap(BITMAP *bmp) {
 
 BITMAP *load_bmp_from_mem(void *data, size_t size) {
 	BITMAP *b = (BITMAP *)malloc(sizeof (BITMAP));
+	if(!b) return NULL;
 
-	SDL_RWops *rw = SDL_RWFromConstMem(data, size);
-	SDL_Surface *img = SDL_LoadBMP_RW(rw, 1);
-	if (!img) {
-		printf("surface broken: %s\n", SDL_GetError());
+	unsigned char* image = NULL;
+	int width, height, channels;
+
+	image = stbi_load_from_memory(data, size, &width, &height, &channels, 4);
+	if(!image) {
+		printf("png error\n");
 		free(b);
 		return NULL;
 	}
+	//if(channels != 4) printf("png not 32 bit, but %d\n", channels*8);
 
-	// important, magic values
-	SDL_SetColorKey(img, SDL_TRUE, SDL_MapRGB(img->format, 0x3C, 0x8E, 0xAA));
-
-	b->h = img->h;
-	b->w = img->w;
-	b->tex = SDL_CreateTextureFromSurface(renderer, img);
-	SDL_FreeSurface(img);
-
+	b->tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
 	if (!b->tex) {
 		printf("texture broken: %s\n", SDL_GetError());
 		free(b);
+		stbi_image_free(image);
 		return NULL;
 	}
+
+	if(SDL_UpdateTexture(b->tex, NULL, image, width * 4)) {
+		printf("texture broken: %s\n", SDL_GetError());
+		SDL_DestroyTexture(b->tex);
+		free(b);
+		stbi_image_free(image);
+	}
+
+	stbi_image_free(image);
+
+	//SDL_SetTextureBlendMode(b->tex, SDL_BLENDMODE_ADD);
+
+	b->h = height;
+	b->w = width;
 
 	return b; 	
 }
@@ -216,12 +227,14 @@ void rectfill(BITMAP *bmp, int x1, int y1, int x2, int y2, int color) {
 	SDL_SetRenderTarget(renderer, bmp->tex);
 	SDL_SetRenderDrawColor(renderer, _palette[color].r, _palette[color].g, _palette[color].b, 0xFF);
 	SDL_RenderFillRect(renderer, &r);
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x0, 0x00, 0x00);
 }
 
 void line(BITMAP *bmp, int x1, int y1, int x2, int y2, int color) {
 	SDL_SetRenderTarget(renderer, bmp->tex);
 	SDL_SetRenderDrawColor(renderer, _palette[color].r, _palette[color].g, _palette[color].b, 0xFF);
 	SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x0, 0x00, 0x00);
 }
 
 void rect(BITMAP *bmp, int x1, int y1, int x2, int y2, int color) {
@@ -234,11 +247,13 @@ void rect(BITMAP *bmp, int x1, int y1, int x2, int y2, int color) {
 	SDL_SetRenderTarget(renderer, bmp->tex);
 	SDL_SetRenderDrawColor(renderer, _palette[color].r, _palette[color].g, _palette[color].b, 0xFF);
 	SDL_RenderDrawRect(renderer, &r);
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x0, 0x00, 0x00);
 }
 void putpixel(BITMAP *bmp, int x, int y, int color) {
 	SDL_SetRenderTarget(renderer, bmp->tex);
 	SDL_SetRenderDrawColor(renderer, _palette[color].r, _palette[color].g, _palette[color].b, 0xFF);
 	SDL_RenderDrawPoint(renderer, x, y);
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x0, 0x00, 0x00);
 }
 
 void set_clip_rect(BITMAP *bmp, int x1, int y1, int x2, int y2) {
@@ -272,6 +287,7 @@ void clear_to_color(BITMAP* bmp, int color) {
 	SDL_SetRenderTarget(renderer, bmp->tex);
 	SDL_SetRenderDrawColor(renderer, _palette[color].r, _palette[color].g, _palette[color].b, 0xFF);
 	SDL_RenderClear(renderer);
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x0, 0x00, 0x00);
 }
 
 void draw_character_ex(BITMAP *bmp, BITMAP *sprite, int x, int y, int color) {
@@ -284,6 +300,7 @@ void draw_character_ex(BITMAP *bmp, BITMAP *sprite, int x, int y, int color) {
 	SDL_SetTextureColorMod(sprite->tex, _palette[color].r, _palette[color].g, _palette[color].b);
 	SDL_SetRenderTarget(renderer, bmp->tex);
 	SDL_RenderCopy(renderer, sprite->tex, NULL, &d);
+	SDL_SetTextureColorMod(sprite->tex, 0xFF, 0xFF, 0xFF);
 }
 
 // text
