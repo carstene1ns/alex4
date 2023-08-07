@@ -25,10 +25,8 @@
 #include <unistd.h>
 #include "options.h"
 
+#include "fixed_math.h"
 #include "sdl/port.h"
-
-// types
-typedef int32_t fixed;
 
 #define stricmp strcasecmp
 

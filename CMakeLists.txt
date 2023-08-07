@@ -55,6 +55,8 @@ add_executable(alex4
 	src/bullet.h
 	src/control.c
 	src/control.h
+	src/fixed_math.c
+	src/fixed_math.h
 	src/data.c
 	src/data.h
 	src/hisc.c

@@ -542,7 +542,7 @@ void cmd_run(Ttoken *t) {
 				else if (o->dir == 0)
 					draw_sprite(swap_buffer, o->bmp[frame], o->x, o->y);
 				else // rotate
-					rotate_sprite(swap_buffer, o->bmp[frame], o->x, o->y, -8*i); // FIXME: itofix i
+					rotate_sprite(swap_buffer, o->bmp[frame], o->x, o->y, itofix(-8*i));
 			}
 			else if (o->line) {
 				line(swap_buffer, ((Tscript_object *)o->line_from)->x + o->x,

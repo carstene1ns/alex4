@@ -687,13 +687,9 @@ void draw_custom_ending(BITMAP *bmp) {
 
 	blit(bitmaps[I_INTRO_BG], bmp, 0, 0, 0, 0, 160, 120);
 
-	// FIXME: STUB ending
-	draw_sprite(bmp, head, 64, 6);
-	#if 0
 	r = 70 + fixtoi(20 * fixcos(itofix(game_count >> 1)) + 20 * fixsin(itofix((int)(game_count / 2.7))) );
 	for(i = 0; i < 256; i += 32) 
 		draw_sprite(bmp, head, 80 - head->w/2 + fixtoi(r * fixcos(itofix(game_count + i))), 60 - head->h/2 + fixtoi(r * fixsin(itofix(game_count + i))));
-	#endif
 
 	draw_sprite_h_flip(bmp, bitmaps[I_ALEX], 60, 40);
 	draw_sprite(bmp, bitmaps[I_LOLA], 84, 40);
@@ -1971,9 +1967,8 @@ void draw_title(BITMAP *bmp, int tick) {
 	textout_ex(bmp, "QUIT", x+1, y+1, 1, -1);
 	textout_ex(bmp, "QUIT", x, y, 4, -1);
 
-	// FIXME: wobble
-	//draw_sprite(bmp, bitmaps[I_POINTER], x - 25 + fixtoi(3 * fixcos(itofix(tick << 2))), 44 + menu_choice * step);
-	draw_sprite(bmp, bitmaps[I_POINTER], x - 25 + (int)(3 * cosf((tick << 2)*(float)M_PI/180)), 44 + menu_choice * step);
+	draw_sprite(bmp, bitmaps[I_POINTER], x - 25 + fixtoi(3 * fixcos(itofix(tick << 2))), 44 + menu_choice * step);
+	//draw_sprite(bmp, bitmaps[I_POINTER], x - 25 + (int)(3 * cosf((tick << 2)*(float)M_PI/180)), 44 + menu_choice * step);
 }
 
 // gets a string from the user

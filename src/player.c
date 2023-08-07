@@ -39,9 +39,9 @@ void draw_player(BITMAP *bmp, Tplayer *p, int x, int y) {
 	}
 	else if (p->actor->status == AC_BALL) {
 		if (!p->actor->direction) 
-			rotate_sprite(bmp, bitmaps[I_HERO_BALL], x, y-16, p->angle); // FIXME: itofix angle
+			rotate_sprite(bmp, bitmaps[I_HERO_BALL], x, y-16, itofix(p->angle));
 		else
-			rotate_sprite_v_flip(bmp, bitmaps[I_HERO_BALL], x, y-16, p->angle + 128); // FIXME: itofix angle
+			rotate_sprite_v_flip(bmp, bitmaps[I_HERO_BALL], x, y-16, itofix(p->angle + 128));
 	}
 	else if (p->actor->status != AC_EAT) {
 		if (p->actor->status == AC_FULL) head = bitmaps[I_HERO_FULL];
