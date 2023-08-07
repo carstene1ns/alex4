@@ -1955,11 +1955,10 @@ void draw_title(BITMAP *bmp, int tick) {
 	textout_ex(bmp, "HIGH SCORES", x, y, 4, -1);
 
 	y += step;
-#if ENABLE_EDITOR
 	textout_ex(bmp, "EDITOR", x+1, y+1, 1, -1);
+#if ENABLE_EDITOR
 	textout_ex(bmp, "EDITOR", x, y, 4, -1);
 #else
-	textout_ex(bmp, "EDITOR", x+1, y+1, 1, -1);
 	textout_ex(bmp, "EDITOR", x, y, 1, -1);
 #endif
 
@@ -2217,8 +2216,6 @@ int do_main_menu() {
 		
 		// if all went well, start editing
 		if (map != NULL) {
-			map->data = data;
-
 			new_game(1);
 			init_player(&player, map);
 			init_map(map);

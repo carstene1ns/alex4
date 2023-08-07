@@ -286,6 +286,8 @@ void draw_character_ex(BITMAP *bmp, BITMAP *sprite, int x, int y, int color) {
 	SDL_RenderCopy(renderer, sprite->tex, NULL, &d);
 }
 
+int gui_fg_color, gui_bg_color;
+
 // text
 void prepare_font(int id) {
     SDL_RWops* rw = SDL_RWFromConstMem(fonts[id].dat, fonts[id].size);
@@ -544,9 +546,9 @@ void fix_gui_colors() {
 	((RGB *)data[0].dat)[254].r = 63;
 	((RGB *)data[0].dat)[254].g = 63;
 	((RGB *)data[0].dat)[254].b = 63;
+#endif
 	gui_fg_color = 255;
 	gui_bg_color = 254;
-#endif
 }
 
 // lighten or darken a 4 color bitmap

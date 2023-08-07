@@ -8,8 +8,8 @@
  *                                                            *
  **************************************************************
  *    (c) Free Lunch Design 2003                              *
- *    Written by Johan Peitz                                  *
- *    http://www.freelunchdesign.com                          *
+ *    by Johan Peitz - http://www.freelunchdesign.com         *
+ *    SDL2 port by carstene1ns - https:/f4ke.de/dev/alex4     *
  **************************************************************
  *    This source code is released under the The GNU          *
  *    General Public License (GPL). Please refer to the       *
@@ -17,21 +17,20 @@
  *    http://www.gnu.org for license information.             *
  **************************************************************/
 
-#include <allegro.h>
 #include <string.h>
 
+#include "port.h"
 #include "main.h"
 #include "map.h"
 #include "edit.h"
+#include "misc.h"
 #include "timer.h"
-#include "../data/data.h"
+#include "data.h"
 
 // current tile
 int edit_tile = 0;
 // path to current map
 char edit_path_and_file[1024];
-// datafile to use
-extern DATAFILE *data;
 // current edit mode
 int edit_mode;
 
@@ -51,6 +50,11 @@ char *get_edit_path_and_file() {
 	return edit_path_and_file;
 }
 
+// FIXME:
+char *get_filename(const char *path) {
+	return path;
+}
+
 // draws the edit screens, panels, whatever
 void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 	int x, y;
@@ -61,13 +65,13 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 
 		// blit mouse tile
 		if (tx < map->width && ty < map->height) {
-			if (edit_tile) draw_sprite(bmp, data[TILE000 + edit_tile - 1].dat, (tx << 4) - map->offset_x, ty << 4);
+			if (edit_tile) draw_tile(bmp, edit_tile - 1, (tx << 4) - map->offset_x, ty << 4);
 			rect(bmp, (tx << 4) - map->offset_x - 1, (ty << 4) - 1, (tx << 4)+16 - map->offset_x, (ty << 4)+16, gui_bg_color);
 		}
 	
 		// show stuff
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, 1, 0, -1, "TILE: %d,%d", tx, ty);
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, 11, 0, -1, "SIZE: %d,%d", map->width, map->height);
+		textprintf_ex(bmp, 1, 1, 0, -1, "TILE: %d,%d", tx, ty);
+		textprintf_ex(bmp, 1, 11, 0, -1, "SIZE: %d,%d", map->width, map->height);
 
 		// show start pos
 		x = (ABS(map->start_x) << 4) - map->offset_x;
@@ -77,7 +81,7 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 	
 		// draw status bar
 		rectfill(bmp, 0, 110, 159, 119, 1);
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, 111, 4, -1, "EDITING: %s", get_filename(edit_path_and_file));
+		textprintf_ex(bmp, 1, 111, 4, -1, "EDITING: %s", get_filename(edit_path_and_file));
 	}
 	else if (edit_mode == EDIT_MODE_SELECT) {	// draw tile palette
 		// calculate offset depending on mouse pointer
@@ -90,7 +94,7 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 		clear_to_color(bmp, gui_bg_color);
 		for(y = 0; y < 8; y ++) {
 			for(x = 0; x < 12; x ++) {
-				draw_sprite(bmp, data[TILE000 + x + y * 12].dat, x * 16 - ox, y * 16 - oy);
+				draw_tile(bmp, x + y * 12, x * 16 - ox, y * 16 - oy);
 			}
 		}
 		
@@ -101,16 +105,16 @@ void draw_edit_mode(BITMAP *bmp, Tmap *map, int mx, int my) {
 	else if (edit_mode == EDIT_MODE_STATS) {	// draw map properties
 		int ty = 16;
 		clear_to_color(bmp, 3);
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, 1, 1, -1, "%s (props)", get_filename(edit_path_and_file));
+		textprintf_ex(bmp, 1, 1, 1, -1, "%s (props)", get_filename(edit_path_and_file));
 		line(bmp, 0, 10, 159, 10, 1);
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "Win by:");
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "  1) reach exit (%s)", (map->win_conditions & MAP_WIN_EXIT ? "X" : " "));
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "  2) kill boss  (%s)", (map->win_conditions & MAP_WIN_KILL_GUARDIAN ? "X" : " "));
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "  3) kill all   (%s)", (map->win_conditions & MAP_WIN_KILL_ALL ? "X" : " "));
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "4) Boss level:  (%s)", (map->boss_level ? "X" : " "));
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, ty+=10, 1, -1, "5) Name: %s", map->name);
+		textprintf_ex(bmp, 1, ty+=10, 1, -1, "%s", "Win by:");
+		textprintf_ex(bmp, 1, ty+=10, 1, -1, "  1) reach exit (%s)", (map->win_conditions & MAP_WIN_EXIT ? "X" : " "));
+		textprintf_ex(bmp, 1, ty+=10, 1, -1, "  2) kill boss  (%s)", (map->win_conditions & MAP_WIN_KILL_GUARDIAN ? "X" : " "));
+		textprintf_ex(bmp, 1, ty+=10, 1, -1, "  3) kill all   (%s)", (map->win_conditions & MAP_WIN_KILL_ALL ? "X" : " "));
+		textprintf_ex(bmp, 1, ty+=10, 1, -1, "4) Boss level:  (%s)", (map->boss_level ? "X" : " "));
+		textprintf_ex(bmp, 1, ty+=10, 1, -1, "5) Name: %s", map->name);
 
-		textprintf_ex(bmp, data[THE_FONT].dat, 1, 110, 1, -1, "F1: back to editor");
+		textprintf_ex(bmp, 1, 110, 1, -1, "%s", "F1: back to editor");
 	}
 
 	if (edit_mode != EDIT_MODE_STATS) {
@@ -164,6 +168,7 @@ void update_edit_mode(Tmap *map, BITMAP *bmp, int mx, int my, int mb) {
 				edit_tile --;
 				if (edit_tile < 0) edit_tile = 96;
 				break;
+#if 0
 			// save map
 			case 'S':
 				// get filename from user
@@ -224,6 +229,7 @@ void update_edit_mode(Tmap *map, BITMAP *bmp, int mx, int my, int mb) {
 					}
 				}
 				break;
+#endif
 			// position items on map
 			case '1':
 				if (ty < 7) map->dat[pos].item = (map->dat[pos].item == MAP_1UP ? 0 : MAP_1UP);
@@ -331,7 +337,7 @@ void update_edit_mode(Tmap *map, BITMAP *bmp, int mx, int my, int mb) {
 		// enter stat mode
 		if (key[KEY_F1]) {
 			edit_mode = EDIT_MODE_STATS;
-			clear_keybuf();
+			//clear_keybuf();
 			while(key[KEY_F1]);
 		}
 
@@ -346,8 +352,8 @@ void update_edit_mode(Tmap *map, BITMAP *bmp, int mx, int my, int mb) {
 		if (mb) {
 			edit_tile = tx + ty * 12 + 1;
 			set_edit_mode(EDIT_MODE_DRAW);
-			while(mouse_b);
-			clear_keybuf();
+			while(MouseBtn());
+			//clear_keybuf();
 		}
 	}
 	else if (edit_mode == EDIT_MODE_STATS) {
@@ -359,7 +365,7 @@ void update_edit_mode(Tmap *map, BITMAP *bmp, int mx, int my, int mb) {
 			if (kb == '3') map->win_conditions ^= MAP_WIN_KILL_ALL;
 
 			if (kb == '4') map->boss_level ^= 1;
-			if (kb == '5') get_string(bmp, map->name, 32, data[THE_FONT].dat, 8, 90, gui_fg_color, NULL);
+			if (kb == '5') get_string(bmp, map->name, 32, 8, 90, gui_fg_color, NULL);
 		}
 
 		if (key[KEY_F1]) {

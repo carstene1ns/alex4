@@ -20,8 +20,6 @@
 #ifndef HISC_H
 #define HISC_H
 
-#include "hisc.h"
-
 // highscore list length
 #define MAX_SCORES      5
 
