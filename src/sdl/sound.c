@@ -43,7 +43,8 @@ int music_vol = MAX_VOL;
 int sound_vol = MAX_VOL;
 
 bool init_sound(Toptions *o) {
-	Mix_Init(MIX_INIT_MOD);
+	if(Mix_Init(MIX_INIT_MOD) != MIX_INIT_MOD)
+		printf("error loading mod music support: %s\n", Mix_GetError());
 	if(Mix_OpenAudio(o->sound_freq, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, o->buffer_size) != 0) {
 		return false;
 	}
@@ -93,7 +94,7 @@ void load_music(int id) {
 	SDL_RWops *rw = SDL_RWFromConstMem(musics[id].dat, musics[id].size);
 	music = Mix_LoadMUSType_RW(rw, MUS_MOD, 1);
 	if (!music) {
-		printf("error loading music\n");
+		printf("error loading music: %s\n", Mix_GetError());
 		return;
 	}
 	music_loaded = true;
