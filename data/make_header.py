@@ -1,4 +1,4 @@
-#!/bin/env/python3
+#!/bin/env python3
 
 import sys
 import os
@@ -91,25 +91,27 @@ if args == 3:
 	out = open(sys.argv[2], 'w')
 
 # get files
-images = list_files(join(data_dir, "images"))
+images_mono = list_files(join(data_dir, "images_mono"))
+images_color = list_files(join(data_dir, "images_color"))
 sounds = list_files(join(data_dir, "sfx_22"))
 music = list_files(join(data_dir, "music"))
 maps = list_files(join(data_dir, "maps"))
 fonts = list_files(join(data_dir, "font"))
 
-if not (images or sounds or music or maps or fonts):
+if not (images_mono or images_color or sounds or music or maps or fonts):
 	print("ERROR: Could not find data files!", file=sys.stderr)
 	exit(1)
 
 # generate header file
 print(header, file=out)
-print_enum(images, "_images", "I_", file=out)
+print_enum(images_mono, "_images", "I_", file=out)
 print_enum(sounds, "_sounds", "S_", file=out)
 print_enum(music, "_music", "MSC_", file=out)
 print_enum(maps, "_maps", "MAP_", file=out)
 print_enum(fonts, "_fonts", "F_", file=out)
 print(split, file=out)
-print_mapping(images, "_image_mapping", "I_", file=out)
+print_mapping(images_mono, "_image_mono_mapping", "I_", file=out)
+print_mapping(images_color, "_image_color_mapping", "I_", file=out)
 print_mapping(sounds, "_sound_mapping", "S_", file=out)
 print_mapping(music, "_music_mapping", "MSC_", file=out)
 print_mapping(maps, "_map_mapping", "MAP_", file=out)

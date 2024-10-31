@@ -138,7 +138,8 @@ endfunction()
 
 file(GLOB DATAFILES CONFIGURE_DEPENDS
 	${CMAKE_CURRENT_SOURCE_DIR}/data/font/*
-	${CMAKE_CURRENT_SOURCE_DIR}/data/images/*
+	${CMAKE_CURRENT_SOURCE_DIR}/data/images_mono/*
+	${CMAKE_CURRENT_SOURCE_DIR}/data/images_color/*
 	${CMAKE_CURRENT_SOURCE_DIR}/data/maps/*
 	${CMAKE_CURRENT_SOURCE_DIR}/data/music/*
 	${CMAKE_CURRENT_SOURCE_DIR}/data/scripts/*

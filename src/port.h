@@ -70,6 +70,8 @@ void draw_tile(BITMAP *bmp, int tile_id, int x, int y);
 extern int gui_bg_color;
 extern int gui_fg_color;
 
+void switch_palette(bool colorize);
+
 // text
 void prepare_font(int id);
 void textprintf_ex_helper(int pos, BITMAP *bmp, int x, int y, int color, int bg, const char *fmt, ...);

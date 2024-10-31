@@ -42,5 +42,6 @@ BITMAP *get_gameover_sign();
 BITMAP *get_letsgo_sign();
 Thisc *get_space_hisc();
 void show_scores(int space, Thisc *table);
+void switch_color_mode(bool colorize);
 
 #endif

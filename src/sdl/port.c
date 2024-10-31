@@ -29,15 +29,25 @@ SDL_Renderer* renderer;
 
 // use sdl
 
-// original colors
-SDL_Color _palette[] = {
+// original monochrome colors
+SDL_Color _palette_mono[] = {
 	{0x3C, 0x8E, 0xAA, 0xFF}, // (white)
 	{0x0C, 0x45, 0x00, 0xFF}, // (red)
 	{0x51, 0x7D, 0x45, 0xFF}, // (lime)
 	{0x9A, 0xB6, 0x8A, 0xFF}, // (yellow)
 	{0xDF, 0xEF, 0xD3, 0xFF}, // (blue)
-	{0xFF, 0x00, 0x00, 0x99}  // red
+	{0xFF, 0x00, 0x00, 0x99}  // red (error)
 };
+// color version
+SDL_Color _palette_color[] = {
+	{0xFF, 0x00, 0x00, 0x99}, // red (error)
+	{0x2C, 0x2C, 0x2C, 0xFF}, // main white game text
+	{0x1C, 0x65, 0x20, 0xFF}, // main black game text
+	{0x9A, 0xB6, 0x8A, 0xFF}, // scroller text
+	{0xFF, 0xFF, 0xFF, 0xFF}, // scroller background
+	{0xFF, 0x00, 0x00, 0x99}  // red (error)
+};
+SDL_Color *_palette = _palette_mono;
 
 // font info
 struct {
@@ -287,6 +297,14 @@ void draw_character_ex(BITMAP *bmp, BITMAP *sprite, int x, int y, int color) {
 }
 
 int gui_fg_color, gui_bg_color;
+
+void switch_palette(bool colorize) {
+	if (colorize) {
+		_palette = _palette_color;
+	} else {
+		_palette = _palette_mono;
+	}
+}
 
 // text
 void prepare_font(int id) {

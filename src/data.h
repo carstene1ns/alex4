@@ -31,6 +31,7 @@ typedef struct _df {
 
 bool load_datafile(const char* filename);
 void unload_data();
+void switch_bitmaps(bool colorize);
 
 // global pointers to data files
 extern BITMAP **bitmaps;

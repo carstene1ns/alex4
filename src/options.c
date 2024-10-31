@@ -59,6 +59,7 @@ void save_options(Toptions *o, const char *file) {
 	snprintf(val, N, "%d", o->height);
 	iniparser_set(ini, "video:height", val);
 	iniparser_set(ini, "video:vsync", MAKE_INIBOOL(o->use_vsync));
+	iniparser_set(ini, "video:colorize", MAKE_INIBOOL(o->colorize));
 
 	iniparser_set(ini, "sound", NULL);
 	iniparser_set(ini, "sound:enable", MAKE_INIBOOL(o->sound_enable));
@@ -118,6 +119,7 @@ bool load_options(Toptions *o, const char *file) {
 	o->width = iniparser_getint(ini, "video:width", o->width);
 	o->height = iniparser_getint(ini, "video:height", o->height);
 	o->use_vsync = iniparser_getboolean(ini, "video:vsync", o->use_vsync);
+	o->colorize = iniparser_getboolean(ini, "video:colorize", o->colorize);
 
 	o->sound_enable = iniparser_getboolean(ini, "sound:enable", o->sound_enable);
 	o->buffer_size = iniparser_getint(ini, "sound:buffer_size", o->buffer_size);
@@ -151,6 +153,7 @@ void reset_options(Toptions *o) {
 	o->width = SCREEN_W;
 	o->height = SCREEN_H;
 	o->use_vsync = true;
+	o->colorize = false;
 
 	o->sound_enable = true;
 	o->buffer_size = 1024;

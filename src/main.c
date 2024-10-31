@@ -370,6 +370,9 @@ int init_game(const char *map_file) {
 		return false;
 	}
 
+	// color mode
+	switch_color_mode(options.colorize);
+
 	// font
 	prepare_font(F_GAME);
 
@@ -2184,7 +2187,7 @@ int do_main_menu() {
 			if (key[KEY_3]) {
 				while(key[KEY_3])
 					update_platform_controls();
-				// unused
+				switch_color_mode(!options.colorize);
 			}
 			if (key[KEY_4]) {
 				while(key[KEY_4])
@@ -2452,6 +2455,12 @@ int do_main_menu() {
 	}
 
 	return status;
+}
+
+void switch_color_mode(bool colorize) {
+	options.colorize = colorize;
+	switch_bitmaps(colorize);
+	switch_palette(colorize);
 }
 
 // main

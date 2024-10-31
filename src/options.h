@@ -32,6 +32,7 @@ typedef struct {
 	int width;
 	int height;
 	bool use_vsync;
+	bool colorize;
 	// sound
 	bool sound_enable;
 	int buffer_size;

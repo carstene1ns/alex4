@@ -29,6 +29,8 @@
 
 // data files
 BITMAP **bitmaps;
+BITMAP **bitmaps_mono;
+BITMAP **bitmaps_color;
 DATAFILE *fonts;
 DATAFILE *maps;
 DATAFILE *scripts;
@@ -57,21 +59,28 @@ bool load_datafile(const char* filename) {
 	}
 
 	// images
-	bitmaps = calloc(I_MAX, sizeof(BITMAP*));
-	for (int i = 0; i<I_MAX; i++) {
-		size_t size;
-		void *data;
-		if(extract(&zip_archive, _image_mapping[i], &data, &size)) {
-			bitmaps[i] = load_bmp_from_mem(data, size);
-			mz_free(data);
-			if (!bitmaps[i]) {
-				printf("Failed to load bmp: %s\n", _image_mapping[i]);
-				mz_zip_reader_end(&zip_archive);
-				return false;
-			}
-		}
+	#define extract_bmps(type, mapping) \
+	type = calloc(I_MAX, sizeof(BITMAP*)); \
+	for (int i = 0; i<I_MAX; i++) { \
+		size_t size; \
+		void *data; \
+		if(extract(&zip_archive, mapping[i], &data, &size)) { \
+			type[i] = load_bmp_from_mem(data, size); \
+			mz_free(data); \
+			if (!type[i]) { \
+				printf("Failed to load bmp: %s\n", mapping[i]); \
+				mz_zip_reader_end(&zip_archive); \
+				return false; \
+			} \
+		} \
 	}
 
+	extract_bmps(bitmaps_mono, _image_mono_mapping)
+	extract_bmps(bitmaps_color, _image_color_mapping)
+
+	#undef extract_bmps
+
+	bitmaps = bitmaps_mono; // default
 
 	#define extract_data(type, max, mapping) \
 	type = calloc(max, sizeof(DATAFILE)); \
@@ -118,13 +127,19 @@ bool load_datafile(const char* filename) {
 
 void unload_data() {
 	// images
-	if (bitmaps) {
-		for (int i = 0; i<I_MAX; i++) {
-			if (bitmaps[i])
-				destroy_bitmap(bitmaps[i]);
-		}
-	}
-	free(bitmaps);
+	#define free_bmps(type) \
+	if (type) { \
+		for (int i = 0; i<I_MAX; i++) { \
+			if (type[i]) \
+				destroy_bitmap(type[i]); \
+		} \
+	} \
+	free(type);
+
+	free_bmps(bitmaps_mono)
+	free_bmps(bitmaps_color)
+
+	#undef free_bmps
 
 	#define free_data(type, max) \
 	if (type) { \
@@ -143,6 +158,8 @@ void unload_data() {
 	// music
 	free_data(musics, MSC_MAX)
 
+	#undef free_data
+
 	//scripts and scriptmaps
 	for (int i = 0; i<SCR_MAX; i++) {
 		if (scripts)
@@ -152,4 +169,12 @@ void unload_data() {
 	}
 	free(scripts);
 	free(scriptmaps);
+}
+
+void switch_bitmaps(bool colorize) {
+	if (colorize) {
+		bitmaps = bitmaps_color;
+	} else {
+		bitmaps = bitmaps_mono;
+	}
 }
