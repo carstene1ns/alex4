@@ -189,7 +189,7 @@ if(SDL2_FOUND AND SDL2_mixer_FOUND)
 	message(STATUS "Using SDL2 ${SDL2_VERSION} and SDL2_mixer ${SDL2_mixer_VERSION}.")
 endif()
 
-target_link_libraries(alex4 miniz iniparser SDL2 SDL2_mixer)
+target_link_libraries(alex4 miniz iniparser SDL2::SDL2 SDL2_mixer::SDL2_mixer)
 if(UNIX)
 	target_link_libraries(alex4 -lm)
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
