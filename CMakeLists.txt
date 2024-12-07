@@ -177,7 +177,7 @@ if(Python3_FOUND)
 	target_sources(alex4 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/data_files.h)
 else()
 	message(STATUS "Using pre-generated datafile header.")
-	target_include_directories(alex4 data)
+	target_include_directories(alex4 PRIVATE data)
 	target_sources(alex4 PRIVATE data/data_files.h)
 endif()
 
